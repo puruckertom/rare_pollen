@@ -43,6 +43,7 @@ if(length(new.packages)) install.packages(new.packages)
 library(MASS)
 library(dplyr, warn.conflicts = FALSE)
 library(ggplot2)
+library(reshape2)
 
 if(verbose_output){
   print("list of loaded packages: ")
@@ -65,14 +66,34 @@ osu_data <- paste(rare_data, "data_in/", sep="")
 Observational data
 ========================================================
 Original file with observational data: 
-https://github.com/puruckertom/bharam_lakerussell/blob/master/data_in/lakerussell_data.txt
+https://github.com/puruckertom/rare_pollen/blob/master/data_in/rare_data_osu_2015.csv
 
 ```{r eval=TRUE, echo=TRUE}
 ##################
 #the data sets
 ##################
-#everything
+#import raw data - everything
 file.exists(paste(osu_data,"rare_data_osu_2015.csv",sep=""))
 osu_obs <- read.table(paste(osu_data,"rare_data_osu_2015.csv",sep=""), header = TRUE, sep = ",")
 str(osu_obs)
+
+#melt to long format
+keepers <- colnames(osu_obs)[1:9]
+osu_concs <- melt(osu_obs, id.vars = keepers, variable.name = "neonic", value.name = "conc")
+dim(osu_concs)
+colnames(osu_concs)
+
+#add detected field and numerical concentration
+osu_concs$conc
+osu_concs$detected <- ifelse(grepl("<", osu_concs$conc),0,1)
+osu_concs$conc2 <- as.numeric(gsub("< ", "", osu_concs$conc))
+View(osu_concs)
+
+```
+
+Summary statistics
+```{r eval=TRUE, echo=TRUE}
+str(osu_concs)
+
+#aggregate(osu_concs$conc2, list(osu_concs$neonic), mean)
 ```
