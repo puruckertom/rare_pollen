@@ -1,0 +1,78 @@
+---
+title: "rare_data"
+output:
+#  pdf_document:
+#    toc: yes
+  html_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Introduction
+========================================================
+General descriptuve statistics for 2015 rare data collected by Ohio State.
+
+Distribution
+========================================================
+The git repo holding this code is available at:
+https://github.com/puruckertom/rare_pollen
+
+Computational environment
+========================================================
+
+```{r eval=FALSE, echo=FALSE}
+#library(installr) #windows only currently
+#updateR()
+```
+Version and installed libraries.
+```{r eval=TRUE, echo=TRUE}
+verbose_output = TRUE
+
+if(verbose_output){
+  print(Sys.info()[4])
+  R.Version()$version.string
+}
+#check to see if needed packages are installed
+list.of.packages <- c("ggplot2", "dplyr")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+#load relevant packages
+library(MASS)
+library(dplyr, warn.conflicts = FALSE)
+library(ggplot2)
+
+if(verbose_output){
+  print("list of loaded packages: ")
+  print((.packages()))
+}
+```
+
+```{r eval=TRUE, echo=FALSE}
+if(Sys.info()[4]=="DZ2626UTPURUCKE"){
+  rare_data <- "k:\\git\\rare_pollen\\"
+}
+
+if(Sys.info()[4]=="stp-air.local" || Sys.info()[4]=="stp-air"){
+  rare_data <- path.expand("~/git/rare_pollen/")
+}
+
+osu_data <- paste(rare_data, "data_in/", sep="")
+```
+
+Observational data
+========================================================
+Original file with observational data: 
+https://github.com/puruckertom/bharam_lakerussell/blob/master/data_in/lakerussell_data.txt
+
+```{r eval=TRUE, echo=TRUE}
+##################
+#the data sets
+##################
+#everything
+file.exists(paste(osu_data,"rare_data_osu_2015.csv",sep=""))
+osu_obs <- read.table(paste(osu_data,"rare_data_osu_2015.csv",sep=""), header = TRUE, sep = ",")
+str(osu_obs)
+```
