@@ -125,24 +125,27 @@ for(i in 1:10){ #10
     #plot sideways boxplot by site for each media and neonic combination
     boxplot(conc2~site_abbrv,data=hist_extract, main=plot_title, horizontal=TRUE,las=2, col=plot_colors[i])
     #plot sideways barchart of detection proportion by site for each media and neonic combination
-    detfreq.df <- data.frame(site=character(),
-                  Doubles=double(),
-                  count=integer(),
-                  Factors=double(),
-                  stringsAsFactors=FALSE)
+    detfreq.df <- data.frame(matrix(NA, nrow = 11, ncol = 4))
+    colnames(detfreq.df) <- c('site','detects','count','det_prop')
+
     for(k in 1:11){
       selected_site_abbrv <- site_abbrvs[k]
+      detfreq.df$site[k] <- selected_site_abbrv
       which_extract_site <- which(hist_extract$site_abbrv==selected_site_abbrv)
       site_extract <- hist_extract[which_extract_site,]
       n_data_site <- dim(hist_extract)[[1]]
+      detfreq.df$count[k] <- n_data_site
       n_detects_site <- sum(hist_extract$detected)
+      detfreq.df$detects[k] <- n_detects_site
       if(n_data_site >0){
         det_prop_site <- n_detects_site/n_data_site
       }else{
         det_prop_site <- 0
       }
+      detfreq.df$det_prop[k] <- det_prop_site
     }
     #plot time series by site for each media and neonic combination
+    barplot(detfreq.df$det_prop,main="Page Views", horiz=TRUE,names.arg=detfreq.df$site,las=1)
   }
 }
 
