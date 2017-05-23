@@ -78,7 +78,7 @@ osu_obs <- read.table(paste(osu_data,"rare_data_osu_2015.csv",sep=""), header = 
 str(osu_obs)
 
 #melt to long format
-keepers <- colnames(osu_obs)[1:9]
+keepers <- colnames(osu_obs)[1:11] #through media column
 osu_concs <- melt(osu_obs, id.vars = keepers, variable.name = "neonic", value.name = "conc")
 dim(osu_concs)
 colnames(osu_concs)
@@ -101,6 +101,7 @@ summary(osu_concs)
 neonics <- unique(osu_concs$neonic)
 medias <- unique(osu_concs$media)
 sites <- unique(osu_concs$site)
+site_abbrvs <- unique(osu_concs$site_abbrv)
 plot_colors <- c("aquamarine4", "bisque", "blue3", "brown", "chartreuse4",
                  "cornflowerblue", "darkgoldenrod3", "darkkhaki", "darkmagenta", "darkorange1")
 for(i in 1:10){ #10
@@ -119,8 +120,29 @@ for(i in 1:10){ #10
     max_data <- round(max(hist_extract$conc2), digits=3)
     x_label = paste("ng/g (min, mean, max =", min_data, ",", mean_data,",",max_data,")","\n",
                     "detection frequency =", n_detects, "/", n_data)
+    #plot overall histogram for media and neonic combination
     hist(hist_extract$conc2, main = plot_title, xlab=x_label, ylab="Frequency", col=plot_colors[i])
-    boxplot(conc2~site,data=hist_extract, main=plot_title, horizontal=TRUE,las=2)
+    #plot sideways boxplot by site for each media and neonic combination
+    boxplot(conc2~site_abbrv,data=hist_extract, main=plot_title, horizontal=TRUE,las=2, col=plot_colors[i])
+    #plot sideways barchart of detection proportion by site for each media and neonic combination
+    detfreq.df <- data.frame(site=character(),
+                  Doubles=double(),
+                  count=integer(),
+                  Factors=double(),
+                  stringsAsFactors=FALSE)
+    for(k in 1:11){
+      selected_site_abbrv <- site_abbrvs[k]
+      which_extract_site <- which(hist_extract$site_abbrv==selected_site_abbrv)
+      site_extract <- hist_extract[which_extract_site,]
+      n_data_site <- dim(hist_extract)[[1]]
+      n_detects_site <- sum(hist_extract$detected)
+      if(n_data_site >0){
+        det_prop_site <- n_detects_site/n_data_site
+      }else{
+        det_prop_site <- 0
+      }
+    }
+    #plot time series by site for each media and neonic combination
   }
 }
 
