@@ -154,8 +154,9 @@ new.packages &lt;- list.of.packages[!(list.of.packages %in% installed.packages()
 if(length(new.packages)) install.packages(new.packages)
 #load relevant packages
 library(MASS)
-library(dplyr, warn.conflicts = FALSE)
-library(ggplot2)</code></pre>
+library(dplyr, warn.conflicts = FALSE)</code></pre>
+<pre><code>## Warning: package 'dplyr' was built under R version 3.3.3</code></pre>
+<pre class="r"><code>library(ggplot2)</code></pre>
 <pre><code>## Warning: package 'ggplot2' was built under R version 3.3.3</code></pre>
 <pre class="r"><code>library(reshape2)</code></pre>
 <pre><code>## Warning: package 'reshape2' was built under R version 3.3.3</code></pre>
@@ -296,12 +297,7 @@ for(i in 1:10){ #10
     #plot sideways barchart of detection proportion by site for each media and neonic combination
     detfreq.df &lt;- data.frame(matrix(NA, nrow = 11, ncol = 4))
     colnames(detfreq.df) &lt;- c('site','detects','count','det_prop')
-    #data.frame(matrix(nrow = 11, ncol = 4),
-    #                         site=character(list(rep('NA',11))),
-    #              detects=double(rep(NA,11)),
-    #              count=integer(rep(NA,11)),
-    #              det_prop=double(rep(NA,11)),
-    #             stringsAsFactors=FALSE)
+
     for(k in 1:11){
       selected_site_abbrv &lt;- site_abbrvs[k]
       detfreq.df$site[k] &lt;- selected_site_abbrv
