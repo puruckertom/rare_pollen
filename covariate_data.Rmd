@@ -36,7 +36,7 @@ if(verbose_output){
   R.Version()$version.string
 }
 #check to see if needed packages are installed
-list.of.packages <- c("ggplot2", "dplyr","nlme")
+list.of.packages <- c("ggplot2", "dplyr","nlme","lme4")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 #load relevant packages
@@ -44,7 +44,8 @@ library(MASS)
 library(dplyr, warn.conflicts = FALSE)
 library(ggplot2)
 library(reshape2)
-library(nlme)
+library(nlme,warn.conflicts=FALSE)
+library(lme4,warn.conflicts=FALSE)
 
 if(verbose_output){
   print("list of loaded packages: ")
@@ -55,15 +56,13 @@ if(verbose_output){
 ```{r eval=TRUE, echo=FALSE}
 if(Sys.info()[4]=="DZ2626UTPURUCKE"){
   rare_data <- "k:\\git\\rare_pollen\\"
-}
-
-if(Sys.info()[4]=="stp-air.local" || Sys.info()[4]=="stp-air"){
+} else if(Sys.info()[4]=="stp-air.local" || Sys.info()[4]=="stp-air"){
   rare_data <- path.expand("~/git/rare_pollen/")
-}
-
-if(Sys.info()[4]=="Erins-MacBook"){
+}else if(Sys.info()[4]=="Erins-MacBook"){
   rare_data <- "~/Documents/GitHub/rare_pollen/"
-}
+} else
+    rare_data <- paste(getwd(),"/",sep="")
+
 osu_data <- paste(rare_data, "data_in/", sep="")
 ```
 
@@ -126,7 +125,9 @@ neonics_cols <- c(neonics_cols,which(colnames(osu_covariate) %in% c("DBT_total_n
 
 #write.csv(osu_covariate,"data_in/CDRC_2017EPA_FP_DBT_clean.csv",row.names=FALSE) #output a csv for the cleaned data
 
+attach(osu_covariate)
 str(osu_covariate)
+
 
 ```
 
@@ -138,16 +139,9 @@ Exploring the data
 
 #####Time to make a quick scan for correlations in the data....
 
-Let's see if we find any correlations between %corn and mortality
-
-```{r eval=TRUE, echo=TRUE}
-attach(osu_covariate)
-cor.test(~mortality+per_corn)
-
-```
 <br>
 
-#####What about correlations between mortality and any of the neonic concentrations?
+#####Are there correlations between mortality and any of the neonic concentrations?
 
 ```{r eval=TRUE, echo=TRUE}
 for(i in 1:length(neonics_cols)){
@@ -215,10 +209,6 @@ for(i in 1:length(interesting_neonics_binomial)){
 }
 
 
-for(i in 1:length(interesting_neonics_binomial)){
-  plot(factor(osu_covariate[,interesting_neonics_binomial[i]],levels = c(0,1),labels=c("No","Yes")),per_corn,pch=19,main=paste("Detection of",gsub("_detected","",interesting_neonics_binomial[i]),"vs % corn"),xlab=paste(gsub("_detected","",interesting_neonics_binomial[i]),"detected?"),ylab="Percent corn")
-}
-
 
 ```
 
@@ -234,16 +224,23 @@ Regression analysis on concentrations - is mortality higher when neonic loads ar
 
 for(i in 1:length(interesting_neonics)){
   fm <- lme(as.formula(paste("mortality ~ ",interesting_neonics[i],
-                            sep="")),random=~1|site_code,data=osu_covariate,na.action=na.omit)
+            sep="")),random=~1|site_code, correlation=corAR1(form=~time.block|site_code),
+            data=osu_covariate,na.action=na.omit)
   cat("\n","\n",paste("Linear mixed effects regression, ",interesting_neonics[i]," vs mortality:",sep=""),"\n","\n")
   print(summary(fm))
   #print(ranef(fm))  #Note - variance in mortality due to site (random effect) is tiny
   #hist(resid(fm))
-  g <- ggplot(osu_covariate,aes_string(interesting_neonics[i],"mortality"))+geom_point(na.rm=T)+
-    geom_smooth(method="lm",formula=y~x,na.rm=T)+theme_bw()+
+  g <- ggplot(osu_covariate,aes_string(interesting_neonics[i],"mortality"))+geom_point(na.rm=T,size=3)+
+    geom_smooth(method="lm",formula=y~x,na.rm=T,size=2.5, colour="grey50")+theme_bw()+
     theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank()) +
     labs(x=paste(interesting_neonics[i],"ng g-1"),y="Relative hive mortality")+geom_hline(yintercept=0)
   print(g)
+  
+  #Examine temporal autocorrelation function 
+  layout(matrix(1:2))
+  acf(resid(fm))
+  acf(resid(fm,type="normalized"))
+  layout(1)
 }
 ```
 <br><br>
@@ -255,10 +252,18 @@ Regression analysis on concentrations - are there higher neonic loads when there
 
 for(i in 1:length(interesting_neonics)){
   fm <- lme(as.formula(paste(interesting_neonics[i],"~ per_corn * planting",
-                            sep="")),random=~1|site_code,data=osu_covariate,na.action=na.omit)
+            sep="")),random=~1|site_code,
+            correlation=corAR1(form=~time.block|site_code),
+            data=osu_covariate,na.action=na.omit)
   cat("\n",paste("Linear mixed effects regression, ",interesting_neonics[i]," vs percent corn:",sep=""),"\n")
   print(summary(fm)) #variance in pollen neonic conc. due to site is not insignificant except for clothianidin
   #hist(resid(fm))
+  
+  #Examine temporal autocorrelation function 
+  layout(matrix(1:2))
+  acf(resid(fm))
+  acf(resid(fm,type="normalized"))
+  layout(1)
 }
 
 ```
@@ -267,15 +272,16 @@ Concentrations of these two neonics in pollen, as well as total neonic load, are
 <br>
 <br>
 
-#####Let's graph corn versus these neonics, by planting period
+#####Let's graph percentcorn versus these neonics, by planting period
 
 ```{r eval=TRUE, echo=TRUE}
 
 for(i in 1:length(interesting_neonics)){
-  g <- ggplot(osu_covariate,aes_string("per_corn",interesting_neonics[i]))+geom_point(na.rm=T)+
-    geom_smooth(method="lm",formula=y~x,na.rm=T)+facet_wrap(~planting,nrow=1,labeller=label_both)+theme_bw()+
+  g <- ggplot(osu_covariate,aes_string("per_corn",interesting_neonics[i]))+geom_point(na.rm=T,size=2)+
+    geom_smooth(method="lm",formula=y~x,na.rm=T,size=2)+facet_wrap(~planting,nrow=1,labeller=label_both)+theme_bw()+
     theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank()) +
-    labs(x="Percent corn within 2 km",y=paste(interesting_neonics[i],"ng g-1"))
+    labs(x="Percent corn within 2 km",y=paste(interesting_neonics[i],"ng g-1"))+
+    coord_cartesian(ylim=c(0,150))
   print(g)
 }
 
@@ -290,8 +296,10 @@ Note: output not shown <br>
 neonics_to_eval <- colnames(osu_covariate)[which(grepl("FP|DBT",colnames(osu_covariate))& !grepl("FP_clothianidin|FP_thiamethoxam|FP_total_|detected|sample_id",colnames(osu_covariate)))]
 
 for(i in 1:length(neonics_to_eval)){
-  fm <- lm(as.formula(paste(neonics_to_eval[i],"~ per_corn * planting",
-                            sep="")),data=osu_covariate)
+  fm <- lme(as.formula(paste(neonics_to_eval[i],"~ per_corn * planting",
+            sep="")),random=~1|site_code,
+            correlation=corAR1(form=~time.block|site_code),
+            data=osu_covariate,na.action=na.omit)
   cat("\n",paste("Linear regression, ",neonics_to_eval[i]," vs percent corn:",sep=""),"\n")
   print(summary(fm))
   #hist(resid(fm))
@@ -308,8 +316,10 @@ Regression analysis on detection - is mortality linked with detection?
 ```{r eval=TRUE, echo=TRUE}
 
 for(i in 1:length(interesting_neonics_binomial)){
-  fm <- lm(as.formula(paste("mortality ~ ",interesting_neonics_binomial[i],
-                            sep="")),data=osu_covariate)
+  fm <- lme(as.formula(paste("mortality ~ ",interesting_neonics_binomial[i],
+            sep="")),data=osu_covariate,
+            correlation = corAR1(form=~time.block|site_code),
+            random=~1|site_code,na.action=na.omit)
   cat("\n",paste("Linear regression, ",interesting_neonics_binomial[i]," vs mortality:",sep=""),"\n")
   print(summary(fm))
   #hist(resid(fm))
@@ -328,11 +338,11 @@ for(i in 1:length(interesting_neonics_binomial)){
 Logistic regression analysis - is corn associated with neonic detection?
 ==========================================
 <br>
-```{r eval=TRUE, echo=TRUE}
+```{r eval=TRUE, echo=FALSE}
 
 for(i in 1:length(interesting_neonics_binomial)){
-  fm <- glm(as.formula(paste(interesting_neonics_binomial[i],"~ per_corn * planting",
-                            sep="")),data=osu_covariate,family=binomial(link="logit"))
+  fm <- glmer(as.formula(paste(interesting_neonics_binomial[i],"~ per_corn * planting +(1|site_code)", sep="")),data=osu_covariate,family=binomial(link="logit"),na.action=na.omit,
+              glmerControl(optimizer="Nelder_Mead"))
   cat("\n",paste("Logistic regression, ",interesting_neonics_binomial[i]," vs percent corn nearby:",sep=""),"\n")
   print(summary(fm))
   #hist(resid(fm)) 
@@ -341,7 +351,8 @@ for(i in 1:length(interesting_neonics_binomial)){
 ```
 <br>
 
-##### We don't see any significant relationships, however we saw above that the corn effect was only during planting periods, and these two neonics have 100% detection rate during planting periods. Therefore, we can't get a good estimate of the corn effect during this critical time. 
+##### The generalized linear mixed effects models do not converge due to the fact that these neonics are always detected during planting periods.
+#####If we remove the random effect (site) and fit a logistic regression, we don't see any significant relationships. However we saw above that the corn effect was only during planting periods, and these two neonics have 100% detection rate during planting periods. Therefore, we can't get a good estimate of the corn effect during this critical time. 
 <br><br>
 
 ##### Let's check to see if using detected/not detected allows us to see significant relationships for any other neonic chemicals vs corn
@@ -350,7 +361,7 @@ Note: output not shown
 ```{r eval=FALSE, echo=TRUE}
 neonics_to_eval <- colnames(osu_covariate)[which(grepl("detected",colnames(osu_covariate))& !grepl("FP_clothianidin|FP_thiamethoxam|FP_any_",colnames(osu_covariate)))]
 for(i in 1:length(neonics_to_eval)){
-  fm <- glm(as.formula(paste(neonics_to_eval[i],"~ per_corn * planting", #Note: not using side ID b/c there are many singularities.
+  fm <- glmer(as.formula(paste(neonics_to_eval[i],"~ per_corn * planting +(1|site_code)", #Note: not using side ID b/c there are many singularities.
                             sep="")),data=osu_covariate,family=binomial(link="logit"))
   cat("\n",paste("Logistic regression, ",neonics_to_eval[i]," vs percent corn nearby:",sep=""),"\n")
   print(summary(fm))
@@ -360,14 +371,17 @@ for(i in 1:length(neonics_to_eval)){
 ```
 <br>
 
-#####No significant relationships found so far for the other neonics in pollen, or anything in dead bees...
+#####Using mixed effects models, no significant relationships were found (though some models had poor convergence due to singularities)
+
+#####If we drop the random effect (site) and use regular logistc regression... mo significant relationships found so far for the other neonics in pollen, or anything in dead bees.
 <br><br>
 
 Direct link between corn and mortality?
 =========================================
 
 ```{r eval=TRUE,echo=TRUE}
-fm <- lm(mortality~per_corn*planting,data=osu_covariate)
+fm <- lme(mortality~per_corn*planting,random=~1|site_code,
+          correlation=corAR1(form=~time.block|site_code),data=osu_covariate)
 summary(fm)
 
 g <- ggplot(osu_covariate,aes_string("per_corn","mortality"))+geom_point(na.rm=T)+
@@ -376,6 +390,10 @@ g <- ggplot(osu_covariate,aes_string("per_corn","mortality"))+geom_point(na.rm=T
     labs(x="Percent corn within 2 km",y="Relative hive mortality")+geom_hline(yintercept=0)
   print(g)
 ```
+<br>
+
+##### Bee mortality was greater during corn planting periods. There was no relationship with percent corn (though percent corn by planting interaction was borderline significant 0.069).
+
 <br><br><br>
 
 Summary of initial findings
