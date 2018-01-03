@@ -36,7 +36,7 @@ if(verbose_output){
   R.Version()$version.string
 }
 #check to see if needed packages are installed
-list.of.packages <- c("ggplot2", "dplyr")
+list.of.packages <- c("ggplot2", "dplyr","nlme")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 #load relevant packages
@@ -44,6 +44,7 @@ library(MASS)
 library(dplyr, warn.conflicts = FALSE)
 library(ggplot2)
 library(reshape2)
+library(nlme)
 
 if(verbose_output){
   print("list of loaded packages: ")
@@ -232,10 +233,11 @@ Regression analysis on concentrations - is mortality higher when neonic loads ar
 ```{r eval=TRUE, echo=TRUE}
 
 for(i in 1:length(interesting_neonics)){
-  fm <- lm(as.formula(paste("mortality ~ ",interesting_neonics[i],
-                            sep="")),data=osu_covariate)
-  cat("\n",paste("Linear regression, ",interesting_neonics[i]," vs mortality:",sep=""),"\n")
+  fm <- lme(as.formula(paste("mortality ~ ",interesting_neonics[i],
+                            sep="")),random=~1|site_code,data=osu_covariate,na.action=na.omit)
+  cat("\n","\n",paste("Linear mixed effects regression, ",interesting_neonics[i]," vs mortality:",sep=""),"\n","\n")
   print(summary(fm))
+  #print(ranef(fm))  #Note - variance in mortality due to site (random effect) is tiny
   #hist(resid(fm))
   g <- ggplot(osu_covariate,aes_string(interesting_neonics[i],"mortality"))+geom_point(na.rm=T)+
     geom_smooth(method="lm",formula=y~x,na.rm=T)+theme_bw()+
@@ -252,10 +254,10 @@ Regression analysis on concentrations - are there higher neonic loads when there
 ```{r eval=TRUE, echo=TRUE}
 
 for(i in 1:length(interesting_neonics)){
-  fm <- lm(as.formula(paste(interesting_neonics[i],"~ per_corn * planting",
-                            sep="")),data=osu_covariate)
-  cat("\n",paste("Linear regression, ",interesting_neonics[i]," vs percent corn:",sep=""),"\n")
-  print(summary(fm))
+  fm <- lme(as.formula(paste(interesting_neonics[i],"~ per_corn * planting",
+                            sep="")),random=~1|site_code,data=osu_covariate,na.action=na.omit)
+  cat("\n",paste("Linear mixed effects regression, ",interesting_neonics[i]," vs percent corn:",sep=""),"\n")
+  print(summary(fm)) #variance in pollen neonic conc. due to site is not insignificant except for clothianidin
   #hist(resid(fm))
 }
 
