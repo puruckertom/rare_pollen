@@ -1,0 +1,142 @@
+---
+title: "interval_site_analysis"
+author: "Jeff Minucci"
+date: "January 8, 2018"
+output: 
+ html_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Introduction
+========================================================
+Analysis of 2015 rare data collected by Ohio State - at the site level 
+
+Goals:  
+
+#
+#
+#
+
+Distribution
+========================================================
+The git repo holding this code is available at:
+https://github.com/puruckertom/rare_pollen  
+
+Computational environment
+========================================================
+
+```{r eval=FALSE, echo=FALSE}
+#library(installr) #windows only currently
+#updateR()
+```
+Version and installed libraries.
+```{r eval=TRUE, echo=TRUE}
+verbose_output = TRUE
+
+if(verbose_output){
+  print(Sys.info()[4])
+  R.Version()$version.string
+}
+#check to see if needed packages are installed
+list.of.packages <- c("ggplot2", "dplyr")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+#load relevant packages
+library(MASS)
+library(dplyr, warn.conflicts = FALSE)
+library(ggplot2)
+library(reshape2)
+
+if(verbose_output){
+  print("list of loaded packages: ")
+  print((.packages()))
+}
+```
+
+```{r eval=TRUE, echo=FALSE}
+if(Sys.info()[4]=="DZ2626UTPURUCKE"){
+  rare_data <- "k:\\git\\rare_pollen\\"
+} else if(Sys.info()[4]=="stp-air.local" || Sys.info()[4]=="stp-air"){
+  rare_data <- path.expand("~/git/rare_pollen/")
+} else
+  rare_data <- paste(getwd(),"/",sep="")
+  
+osu_data <- paste(rare_data, "data_in/", sep="")
+```
+<br><br>
+
+Analytical data
+========================================================
+##### Original file with observational data: 
+https://github.com/puruckertom/rare_pollen/blob/master/data_in/rare_data_osu_2015.csv
+
+```{r eval=TRUE, echo=TRUE}
+##################
+#the data sets
+##################
+#import raw data - everything
+#file.exists(paste(osu_data,"CDRC_2017EPA_FP_DBT.csv",sep=""))
+osu_covariate <- read.table(paste(osu_data,"CDRC_2017EPA_FP_DBT_clean.csv",sep=""), header = TRUE, 
+                            sep = ",",strip.white=T,na.strings="")
+interval_site <- read.csv(paste(osu_data,"interval_site_level.csv",sep=""),header=T, stringsAsFactors = T)
+
+```
+
+<br>
+
+##### Clean and format the data:
+
+```{r eval=TRUE, echo=TRUE}
+
+## Clean site-level interval data
+
+# Make column names consistent
+colnames(interval_site)[1:4] <- c("site_code","interval","n_hives","per_corn")
+colnames(interval_site) <- gsub("mean.","",tolower(colnames(interval_site)))
+colnames(interval_site) <- ifelse(substr(colnames(interval_site),nchar(colnames(interval_site)),
+                                         nchar(colnames(interval_site))) == ".",substr(colnames(interval_site),1,nchar(colnames(interval_site))-1),colnames(interval_site))
+colnames(interval_site) <- gsub("\\.","_",colnames(interval_site))
+
+# Remove sums of neonic concentrations
+interval_site <- interval_site[,!colnames(interval_site) %in% 
+                                 c("sumclo_plt","sumclo_all","sumct_plt","sumct_all","sumneo_all")]
+
+# Assign types
+interval_site$interval <- factor(interval_site$interval)
+interval_site$per_corn <- interval_site$per_corn*100
+
+
+## Create site-level means of the interesting neonics (thiamethoxam and clothianidin) over the planting period and all of May
+## For merging with interval_site dataset
+
+mean_may <- aggregate(cbind(FP_thiamethoxam, FP_clothianidin, FP_total_neonic)~site_code,data=osu_covariate,FUN=mean,na.rm=T)
+colnames(mean_may)[2:4] <- c("mean_thi_may", "mean_clo_may","mean_total_may") 
+
+mean_planting <- aggregate(cbind(FP_thiamethoxam, FP_clothianidin, FP_total_neonic)~site_code,data=subset(osu_covariate,planting=='yes'),FUN=mean,na.rm=T)
+colnames(mean_planting)[2:4] <- c("mean_thi_planting", "mean_clo_planting","mean_total_planting") 
+
+site_means <- cbind(mean_may,mean_planting[,-1])
+
+## Inner join mean neonic conc. with site-level interval data
+interval_site <- merge(interval_site,site_means,by="site_code")
+
+#str(interval_site)
+
+# Write cleaned data to csv
+#write.csv(interval_site,paste(osu_data,"interval_site_level_clean.csv",sep=""))
+
+
+
+## Convert intervals from long to wide
+
+
+
+
+```
+
+
