@@ -43,7 +43,7 @@ if(verbose_output){
   R.Version()$version.string
 }
 #check to see if needed packages are installed
-list.of.packages <- c("ggplot2", "dplyr")
+list.of.packages <- c("ggplot2", "dplyr","corrplot")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 #load relevant packages
@@ -51,6 +51,7 @@ library(MASS)
 library(dplyr, warn.conflicts = FALSE)
 library(ggplot2)
 library(reshape2)
+library(corrplot)
 
 if(verbose_output){
   print("list of loaded packages: ")
@@ -107,7 +108,7 @@ interval_site <- interval_site[,!colnames(interval_site) %in%
                                  c("sumclo_plt","sumclo_all","sumct_plt","sumct_all","sumneo_all")]
 
 # Assign types
-interval_site$interval <- factor(interval_site$interval)
+interval_site$interval <- factor(interval_site$interval,levels=c(1,2,3))
 interval_site$per_corn <- interval_site$per_corn*100
 
 
@@ -122,21 +123,78 @@ colnames(mean_planting)[2:4] <- c("mean_thi_planting", "mean_clo_planting","mean
 
 site_means <- cbind(mean_may,mean_planting[,-1])
 
+#Make site names consistent between datasets
+levels(site_means$site_code) <- c(levels(site_means$site_code),"MB","MO")
+site_means[site_means$site_code =="MC","site_code"] <- "MB"
+site_means[site_means$site_code =="MM","site_code"] <- "MO"
+site_means$site_code <- droplevels(site_means$site_code)
+
 ## Inner join mean neonic conc. with site-level interval data
 interval_site <- merge(interval_site,site_means,by="site_code")
+
 
 #str(interval_site)
 
 # Write cleaned data to csv
 #write.csv(interval_site,paste(osu_data,"interval_site_level_clean.csv",sep=""))
 
-
-
 ## Convert intervals from long to wide
+keep<- colnames(interval_site)[!grepl("chg|interval|n_hives",colnames(interval_site))]
+site_wide <- reshape(interval_site,idvar=keep,timevar="interval",direction="wide",sep="_",
+                     drop=c("n_hives"),new.row.names=c(1:10))
 
 
+# To move to wide format:
+#corrplot(cor(interval_site[,4:length(interval_site)]),type="upper",order="hclust",tl.col="black",tl.srt=45)
+
+```
+
+
+Correlation structure
+=============================
+
+```{r eval=T, echo=T,fig.width=6,fig.height=6}
+
+res <- cor.mtest(site_wide[,-1])
+corrplot(cor(site_wide[,-1]),type="upper",tl.col="black",tl.srt=90,p.mat=res$p,
+         insig="label_sig",pch="*",pch.cex=1,pch.col="white")
 
 
 ```
 
+Colony growth - PCA
+=============================
+Can we reduce our colony growth variables to fewer dimensions?  
+
+* It appears that changes in **area covered by bees** and **seams filled with bees** are postively correlated.  
+
+* Changes in area containing **open** and **capped** brood are negatively correlated with changes in area containing **nectar** 
+
+```{r eval=T, echo=T}
+
+colony_pca <- prcomp(interval_site[,7:12],center=T,scale.=T)
+summary(colony_pca)
+print(colony_pca)
+
+biplot(colony_pca)
+
+```
+
+
+Regression analysis
+=============================
+
+We have already seen that there is greater bee mortality during days when neonic concentrations in pollen are high..
+
+But does greater neonic load in pollen lead to negative hive outcomes, at time of exposure and later?
+
+```{r eval=T, echo=T}
+
+fm_1 <- lm(open_chg_3~mean_clo_planting,data=site_wide)
+summary(fm_1)
+
+
+fm_2 <- lm(pollen_chg_1~mean_clo_planting,data=site_wide)
+summary(fm_2)
+```
 
