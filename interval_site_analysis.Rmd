@@ -18,9 +18,6 @@ Analysis of 2015 rare data collected by Ohio State - at the site level
 
 Goals:  
 
-#
-#
-#
 
 Distribution
 ========================================================
@@ -43,7 +40,7 @@ if(verbose_output){
   R.Version()$version.string
 }
 #check to see if needed packages are installed
-list.of.packages <- c("ggplot2", "dplyr","corrplot")
+list.of.packages <- c("ggplot2", "dplyr","corrplot","nlme")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 #load relevant packages
@@ -52,6 +49,7 @@ library(dplyr, warn.conflicts = FALSE)
 library(ggplot2)
 library(reshape2)
 library(corrplot)
+library(nlme)
 
 if(verbose_output){
   print("list of loaded packages: ")
@@ -143,9 +141,78 @@ keep<- colnames(interval_site)[!grepl("chg|interval|n_hives",colnames(interval_s
 site_wide <- reshape(interval_site,idvar=keep,timevar="interval",direction="wide",sep="_",
                      drop=c("n_hives"),new.row.names=c(1:10))
 
+## Make variables for total change (first observation to final observation)
+hive_vars <- c("seam","bee","cap","open","pollen","nectar")
+for(i in 1:length(hive_vars)){
+  new_var <- rowSums(site_wide[,paste(hive_vars[i],c("1","2","3"),sep="_chg_")])
+  site_wide[[paste(hive_vars[i],"_chg_total",sep="")]] <- new_var
+}
 
-# To move to wide format:
-#corrplot(cor(interval_site[,4:length(interval_site)]),type="upper",order="hclust",tl.col="black",tl.srt=45)
+```
+
+
+Create initial value variables (and relative change variables - IN PROGRESS)
+=============================
+Changes in hive characteristics may be more meaningful if they are expressed relative to the initial values.  
+
+We may also want to use the initial values as covariates in regression models, if we do use absolute changes. 
+
+
+```{r eval=T, echo=T}
+
+#Read data, fix column names
+frame_data <- read.csv(paste(osu_data,"raw_frame_data.csv",sep=""),stringsAsFactors = T)[1:153,-c(25:34)]
+colnames(frame_data) <- gsub("\\.comb","per_comb",colnames(frame_data))
+colnames(frame_data) <- tolower(gsub("\\.","",colnames(frame_data)))
+colnames(frame_data)[3] <- "per_corn"
+frame_data[,grepl("per_comb",colnames(frame_data))] <- as.numeric(gsub("%","",as.matrix(frame_data[,grepl("per_comb",colnames(frame_data))])))
+frame_data[["per_corn"]] <- as.numeric(gsub("%","",as.matrix(frame_data[,"per_corn"])))
+
+#Make site DS hive_no consistent ** Note: need to find out what's going on with these DS hives
+frame_data$hive_no[frame_data$hive_no == 31.01] <- 31
+frame_data$hive_no[frame_data$hive_no == 31.02] <- 32
+
+
+#convert long to wide format
+keep <- colnames(frame_data)[!grepl("cm2|comb|bees|yr_site|date|varroa|month",colnames(frame_data))]
+frame_wide <- reshape(frame_data,idvar=keep,timevar="month",direction="wide",sep="_",
+                     drop=c("yr_site","date","varroaincomplete"))
+colnames(frame_wide)[1] <- "site_code"
+
+
+##create relative change variables for entire study length (april to august) - for each hive
+
+total_chg <- (frame_wide[,grepl("_8",colnames(frame_wide))] - frame_wide[,grepl("_4",colnames(frame_wide))]) / frame_wide[,grepl("_4",colnames(frame_wide))] * 100
+
+total_chg <- cbind(hive_no = frame_wide$hive_no, site_code = frame_wide$site_code,total_chg)
+total_chg <- do.call(data.frame,lapply(total_chg, function(x) replace(x, is.infinite(x),NA)))
+colnames(total_chg)[2:ncol(total_chg)] <- gsub("_8","_pchg_total",colnames(total_chg)[2:ncol(total_chg)]) 
+
+
+##create initial value variables
+
+initial <- cbind(hive_no = frame_wide$hive_no,site_code = frame_wide$site_code, frame_wide[,grepl("_4",colnames(frame_wide))])
+colnames(initial)[2:ncol(initial)] <- gsub("_4","_initial",colnames(initial)[2:ncol(initial)]) 
+
+#merge with original frame data to create a hive level dataset
+new_vars <- merge(total_chg[-2],initial[,-2],by="hive_no")
+frame_wide <- merge(frame_wide,new_vars,by="hive_no")
+
+#bring in neonic concentrations from site level data
+frame_wide <- merge(site_wide[,grepl("mean_t|mean_clo|site_code",colnames(site_wide))],frame_wide,by="site_code")
+
+#Write new frame level dataset (in wide format)
+#write.csv(frame_wide,paste(osu_data,"frame_data_expanded.csv",sep=""))
+
+#Merge initial hive variables into our original site-level dataset
+aggregated_initial <- aggregate( . ~ site_code  ,data=frame_wide[,grepl("_initial|site_code",colnames(frame_wide))], FUN=mean)
+aggregated_initial <- aggregated_initial[,grepl("site_code|seam|bees|capped|open|pollen|nectar",colnames(aggregated_initial)) & 
+                                           !grepl("per_comb",colnames(aggregated_initial))] #keep only columns in initial (wide) site-level dataset
+colnames(aggregated_initial)[2:7] <- c("seam_initial","bee_initial","cap_initial","open_initial","pollen_initial","nectar_initial")
+site_wide <- merge(site_wide,aggregated_initial,by="site_code")
+
+
+## Make dataset analagous to original set but with relative changes instead of absolute
 
 ```
 
@@ -155,11 +222,21 @@ Correlation structure
 
 ```{r eval=T, echo=T,fig.width=6,fig.height=6}
 
-res <- cor.mtest(site_wide[,-1])
-corrplot(cor(site_wide[,-1]),type="upper",tl.col="black",tl.srt=90,p.mat=res$p,
+res <- cor.mtest(site_wide[,c(2:28)])
+corrplot(cor(site_wide[,c(2:28)]),type="upper",tl.col="black",tl.srt=90,p.mat=res$p,
          insig="label_sig",pch="*",pch.cex=1,pch.col="white")
 
 
+```
+<br>
+
+What about for cumulative hive changes our the entire study period? 
+
+```{r eval=T, echo=T,fig.width=4,fig.height=4}
+
+res <- cor.mtest(site_wide[,c(2:10,29:34)])
+corrplot(cor(site_wide[,c(2:10,29:34)]),type="upper",tl.col="black",tl.srt=90,p.mat=res$p,
+         insig="label_sig",pch="*",pch.cex=1,pch.col="white")
 ```
 
 Colony growth - PCA
@@ -186,15 +263,44 @@ Regression analysis
 
 We have already seen that there is greater bee mortality during days when neonic concentrations in pollen are high..
 
-But does greater neonic load in pollen lead to negative hive outcomes, at time of exposure and later?
+But does greater neonic load in pollen lead to negative hive outcomes, at time of exposure and later?  
+
+Let's also account for the initial characteristics of the hive at the start of the study. We can also try to account for the fact that hives that collect more pollen (perhaps due to corn?) may do better. 
 
 ```{r eval=T, echo=T}
 
-fm_1 <- lm(open_chg_3~mean_clo_planting,data=site_wide)
-summary(fm_1)
+print("Does total neonic exposure in May affect bee population change (as measured by # of seams) throughout the season?")
+fm_1 <- lm(seam_chg_total~mean_total_planting + seam_initial + pollen_chg_total , data=site_wide)
+summary(fm_1) # negative effect on bee population change (measured by seams filled w/bees)
 
 
-fm_2 <- lm(pollen_chg_1~mean_clo_planting,data=site_wide)
-summary(fm_2)
+print("Does total neonic exposure in May affect bee population change (as measured by frame area covered by bees) throughout the season?")
+fm_2 <- lm(bee_chg_total~mean_total_planting+bee_initial+pollen_chg_total,data=site_wide)
+summary(fm_2) # borderline non-sig negative effect on bee pop change (measured by area covered by bees)
+
+
+print("Does total neonic exposure in May affect change in open brood area throughout the season?")
+fm_3 <- lm(open_chg_total~mean_total_planting+open_initial+pollen_chg_total,data=site_wide)
+summary(fm_3) # negative effect on open brood change
+
+
+print("Does total neonic exposure in May affect change in capped brood area throughout the season?")
+fm_4 <- lm(cap_chg_total~mean_total_planting+cap_initial+pollen_chg_total,data=site_wide)
+summary(fm_4) # no effect on capped brood change
+
+
+print("Does total neonic exposure in May affect change in pollen throughout the season?")
+fm_5 <- lm(pollen_chg_total~mean_total_planting+pollen_initial,data=site_wide)
+summary(fm_5)# no effect on pollen change
+
+
+print("Does total neonic exposure in May affect change in nectar throughout the season?")
+fm_5 <- lm(nectar_chg_total~mean_total_planting+nectar_initial + pollen_chg_total,data=site_wide)
+summary(fm_5)# no effect on nectar change
+
+
+
 ```
+
+
 
