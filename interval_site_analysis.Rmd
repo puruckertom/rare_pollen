@@ -194,6 +194,7 @@ colnames(total_chg)[2:ncol(total_chg)] <- gsub("_8","_pchg_total",colnames(total
 initial <- cbind(hive_no = frame_wide$hive_no,site_code = frame_wide$site_code, frame_wide[,grepl("_4",colnames(frame_wide))])
 colnames(initial)[2:ncol(initial)] <- gsub("_4","_initial",colnames(initial)[2:ncol(initial)]) 
 
+
 #merge with original frame data to create a hive level dataset
 new_vars <- merge(total_chg[-2],initial[,-2],by="hive_no")
 frame_wide <- merge(frame_wide,new_vars,by="hive_no")
