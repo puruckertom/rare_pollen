@@ -81,7 +81,7 @@ https://github.com/puruckertom/rare_pollen/blob/master/data_in/rare_data_osu_201
 #import raw data - everything
 #file.exists(paste(osu_data,"CDRC_2017EPA_FP_DBT.csv",sep=""))
 osu_covariate <- read.table(paste(osu_data,"CDRC_2017EPA_FP_DBT_clean.csv",sep=""), header = TRUE, 
-                            sep = ",",strip.white=T,na.strings="")
+                            sep = ",",strip.white=T,na.strings=c("","NA"))
 interval_site <- read.csv(paste(osu_data,"interval_site_level.csv",sep=""),header=T, stringsAsFactors = T)
 
 ```
@@ -206,11 +206,20 @@ frame_wide <- merge(site_wide[,grepl("mean_t|mean_clo|site_code",colnames(site_w
 #write.csv(frame_wide,paste(osu_data,"frame_data_expanded.csv",sep=""))
 
 #Merge initial hive variables into our original site-level dataset
-aggregated_initial <- aggregate( . ~ site_code  ,data=frame_wide[,grepl("_initial|site_code",colnames(frame_wide))], FUN=mean)
+aggregated_initial <- aggregate( . ~ site_code  ,data=frame_wide[,grepl("_initial|site_code",colnames(frame_wide))],
+                                 FUN=mean,na.rm=T)
 aggregated_initial <- aggregated_initial[,grepl("site_code|seam|bees|capped|open|pollen|nectar",colnames(aggregated_initial)) & 
                                            !grepl("per_comb",colnames(aggregated_initial))] #keep only columns in initial (wide) site-level dataset
 colnames(aggregated_initial)[2:7] <- c("seam_initial","bee_initial","cap_initial","open_initial","pollen_initial","nectar_initial")
 site_wide <- merge(site_wide,aggregated_initial,by="site_code")
+
+#remove variable for ALL neonics and replace with Clo + Thi (to be consistent with manuscript)
+site_wide$mean_total_may <- site_wide$mean_clo_may + site_wide$mean_thi_may
+site_wide$mean_total_planting <- site_wide$mean_clo_planting + site_wide$mean_thi_planting
+colnames(site_wide)[colnames(site_wide) == "mean_total_may"] <- "mean_ct_may"
+colnames(site_wide)[colnames(site_wide) == "mean_total_planting"] <- "mean_ct_planting"
+
+
 
 
 ## Make dataset analagous to original set but with relative changes instead of absolute
@@ -270,29 +279,29 @@ Let's also account for the initial characteristics of the hive at the start of t
 
 ```{r eval=T, echo=T}
 
-fm_1 <- lm(seam_chg_total~mean_total_planting + seam_initial + pollen_chg_total , data=site_wide)
-print("Does neonic exposure in during planting affect bee population change (as measured by # of seams) throughout the season?")
-print(summary(fm_1)) # negative effect on bee population change (measured by seams filled w/bees)
+fm_1 <- lm(seam_chg_total~mean_ct_planting + seam_initial + pollen_chg_total , data=site_wide)
+print("Does neonic exposure during planting affect bee population change (as measured by # of seams) throughout the season?")
+print(summary(fm_1)) # no effect
 
-fm_2 <- lm(bee_chg_total~mean_total_planting+bee_initial+pollen_chg_total,data=site_wide)
+fm_2 <- lm(bee_chg_total~mean_ct_planting+bee_initial+pollen_chg_total,data=site_wide)
 print("Does neonic exposure during planting affect bee population change (as measured by frame area covered by bees) throughout the season?")
-print(summary(fm_2)) # borderline non-sig negative effect on bee pop change (measured by area covered by bees)
+print(summary(fm_2)) # no effect
 
-fm_3 <- lm(open_chg_total~mean_total_planting+open_initial+pollen_chg_total,data=site_wide)
+fm_3 <- lm(open_chg_total~mean_ct_planting+open_initial+pollen_chg_total,data=site_wide)
 print("Does neonic exposure during planting affect change in open brood area throughout the season?")
-print(summary(fm_3)) # negative effect on open brood change
+print(summary(fm_3)) # no effect
 
-fm_4 <- lm(cap_chg_total~mean_total_planting+cap_initial+pollen_chg_total,data=site_wide)
+fm_4 <- lm(cap_chg_total~mean_ct_planting+cap_initial+pollen_chg_total,data=site_wide)
 print("Does neonic exposure during planting affect change in capped brood area throughout the season?")
-print(summary(fm_4)) # no effect on capped brood change
+print(summary(fm_4)) # no effect 
 
-fm_5 <- lm(pollen_chg_total~mean_total_planting+pollen_initial,data=site_wide)
+fm_5 <- lm(pollen_chg_total~mean_ct_planting+pollen_initial,data=site_wide)
 print("Does neonic exposure during planting affect change in pollen throughout the season?")
-print(summary(fm_5))# no effect on pollen change
+print(summary(fm_5))# borderline positive effect on pollen change
 
-fm_6 <- lm(nectar_chg_total~mean_total_planting+nectar_initial + pollen_chg_total,data=site_wide)
+fm_6 <- lm(nectar_chg_total~mean_ct_planting+nectar_initial + pollen_chg_total,data=site_wide)
 print("Does neonic exposure during planting affect change in nectar throughout the season?")
-print(summary(fm_6))# no effect on nectar change
+print(summary(fm_6))# no effect 
 
 
 
