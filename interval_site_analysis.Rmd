@@ -16,8 +16,13 @@ Introduction
 ========================================================
 Analysis of 2015 rare data collected by Ohio State - at the site level 
 
-Goals:  
+To address:
 
+1. Neonics are expressed as sums of the concentrations detected at each sampling date, during the period of interest. It would be more appropriate to take the mean of these concentrations. This should make these values easier to interpret. **Note:** this should not change the results, as each site had the same number of measurements during each period. However, if this were not true, taking sums would lead to erroneous differences between sites.  
+
+2. Changes in hive health are expressed in absolute terms, but they may depend on the initial values. For example, a hive that starts with fewer bees may have more potential for growth (or maybe less?). We can try using linear regression models that include the initial values as a covariate. 
+
+3. Changes in hive health could also be related to differences in pollen collection (which may in turn be driven by percent corn nearby). We can try using the change in pollen area as a covariate. 
 
 Distribution
 ========================================================
@@ -153,7 +158,7 @@ for(i in 1:length(hive_vars)){
 
 Create initial value variables (and relative change variables - IN PROGRESS)
 =============================
-Changes in hive characteristics may be more meaningful if they are expressed relative to the initial values.  
+Changes in hive health may be more meaningful if they are expressed relative to the initial values.  
 
 We may also want to use the initial values as covariates in regression models, if we do use absolute changes. 
 
@@ -249,7 +254,7 @@ corrplot(cor(site_wide[,c(2:10,29:34)]),type="upper",tl.col="black",tl.srt=90,p.
          insig="label_sig",pch="*",pch.cex=1,pch.col="white")
 ```
 
-Colony growth - PCA
+Colony health - PCA
 =============================
 Can we reduce our colony growth variables to fewer dimensions?  
 
@@ -283,31 +288,40 @@ fm_1 <- lm(seam_chg_total~mean_ct_planting + seam_initial + pollen_chg_total , d
 cat("-------------------------------------\n\n",
     "Does neonic exposure during planting affect bee population change (as measured by # of seams) throughout the season?\n")
 print(summary(fm_1)) # no effect
+#hist(resid(fm_1))
 
 fm_2 <- lm(bee_chg_total~mean_ct_planting+bee_initial+pollen_chg_total,data=site_wide)
 cat("-------------------------------------\n\n",
     "Does neonic exposure during planting affect bee population change (as measured by frame area covered by bees) throughout the season?\n")
 print(summary(fm_2)) # no effect
+#hist(resid(fm_2))
+
 
 fm_3 <- lm(open_chg_total~mean_ct_planting+open_initial+pollen_chg_total,data=site_wide)
 cat("-------------------------------------\n\n",
     "Does neonic exposure during planting affect change in open brood area throughout the season?\n")
 print(summary(fm_3)) # no effect
+#hist(resid(fm_3))
+
 
 fm_4 <- lm(cap_chg_total~mean_ct_planting+cap_initial+pollen_chg_total,data=site_wide)
 cat("-------------------------------------\n\n",
     "Does neonic exposure during planting affect change in capped brood area throughout the season?\n")
 print(summary(fm_4)) # no effect 
+#hist(resid(fm_4))
 
 fm_5 <- lm(pollen_chg_total~mean_ct_planting+pollen_initial,data=site_wide)
 cat("-------------------------------------\n\n",
     "Does neonic exposure during planting affect change in pollen throughout the season?\n")
 print(summary(fm_5))# borderline positive effect on pollen change
+#hist(resid(fm_5))
+
 
 fm_6 <- lm(nectar_chg_total~mean_ct_planting+nectar_initial + pollen_chg_total,data=site_wide)
 cat("-------------------------------------\n\n",
     "Does neonic exposure during planting affect change in nectar throughout the season?\n")
 print(summary(fm_6))# no effect 
+#hist(resid(fm_6))
 
 
 
@@ -350,5 +364,8 @@ print(summary(fm_6))# no effect
 
 
 ```
+
+Conclusions for site-level analysis
+========================================================
 
 
