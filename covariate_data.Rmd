@@ -214,7 +214,9 @@ for(i in 1:length(interesting_neonics)){
 
 ```
 
-**Summary: concentrations of these two neonics in pollen, as well as total neonic load, were increased when more corn was planted nearby, but ONLY during corn planting periods (see significant positive *percent corn by planting interaction*).**    
+**Summary: concentrations of these two neonics in pollen, as well as total neonic load, were increased when more corn was planted nearby, but ONLY during corn planting periods (see significant positive *percent corn by planting interaction*). **
+
+**Note: significant relationships do not hold if we remove the site with very high neonic concentrations.**    
 
 <br><br>
 
@@ -283,7 +285,9 @@ for(i in 1:length(interesting_neonics)){
 ```
 <br><br>
 
-**Summary: As concentrations of *thiamethoxam*, *clothianidin* and *total neonics* in field pollen increased, there was greater bee mortality.**  
+**Summary: As concentrations of *thiamethoxam*, *clothianidin* and *total neonics* in field pollen increased, there was greater bee mortality. **
+
+**Note: these relationships hold even if you remove the site with very high neonic concentrations.**  
 
 <br><br>
 
@@ -291,11 +295,12 @@ Summary of initial findings
 ================================
 <br>
 
-1. During corn planting periods only... there were greater concentrations of two neonic insecticides, **thiamethoxam** and **clothianidin**, and greater **total neonic concentrations** in field pollen when there was more corn planted nearby (within 2 km).
+1. During corn planting periods only... there were greater concentrations of two neonic insecticides, **thiamethoxam** and **clothianidin**, and greater **total neonic concentrations** in field pollen when there was more corn planted nearby (within 2 km). The corn effect *does not* hold if we remove one observation that had very high **clothianidin** and **thiamethoxam** levels. 
 
-2. Greater concentrations of these same neonics, as well as total neonic load, were associated with increased bee mortality.
+2. Greater concentrations of these same neonics, as well as total neonic load, were associated with increased bee mortality. This effect holds even with the very high observation removed. 
 
 3. No significant relationships were found for other neonics measured in field pollen, or for any measurements from dead bees.  
 
 <br>
+osu_covariate$FP_clothianidin
 

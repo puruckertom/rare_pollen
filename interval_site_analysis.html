@@ -381,8 +381,11 @@ summary(colony_pca)</code></pre>
 <p>But does greater neonic load in pollen lead to negative hive outcomes, at time of exposure and later?</p>
 <p>Let’s also account for the initial characteristics of the hive at the start of the study. We can also try to account for the fact that hives that collect more pollen (perhaps due to corn?) may do better.</p>
 <pre class="r"><code>fm_1 &lt;- lm(seam_chg_total~mean_ct_planting + seam_initial + pollen_chg_total , data=site_wide)
-print(&quot;Does neonic exposure during planting affect bee population change (as measured by # of seams) throughout the season?&quot;)</code></pre>
-<pre><code>## [1] &quot;Does neonic exposure during planting affect bee population change (as measured by # of seams) throughout the season?&quot;</code></pre>
+cat(&quot;-------------------------------------\n\n&quot;,
+    &quot;Does neonic exposure during planting affect bee population change (as measured by # of seams) throughout the season?\n&quot;)</code></pre>
+<pre><code>## -------------------------------------
+## 
+##  Does neonic exposure during planting affect bee population change (as measured by # of seams) throughout the season?</code></pre>
 <pre class="r"><code>print(summary(fm_1)) # no effect</code></pre>
 <pre><code>## 
 ## Call:
@@ -406,8 +409,11 @@ print(&quot;Does neonic exposure during planting affect bee population change (a
 ## Multiple R-squared:  0.6802, Adjusted R-squared:  0.5203 
 ## F-statistic: 4.254 on 3 and 6 DF,  p-value: 0.06233</code></pre>
 <pre class="r"><code>fm_2 &lt;- lm(bee_chg_total~mean_ct_planting+bee_initial+pollen_chg_total,data=site_wide)
-print(&quot;Does neonic exposure during planting affect bee population change (as measured by frame area covered by bees) throughout the season?&quot;)</code></pre>
-<pre><code>## [1] &quot;Does neonic exposure during planting affect bee population change (as measured by frame area covered by bees) throughout the season?&quot;</code></pre>
+cat(&quot;-------------------------------------\n\n&quot;,
+    &quot;Does neonic exposure during planting affect bee population change (as measured by frame area covered by bees) throughout the season?\n&quot;)</code></pre>
+<pre><code>## -------------------------------------
+## 
+##  Does neonic exposure during planting affect bee population change (as measured by frame area covered by bees) throughout the season?</code></pre>
 <pre class="r"><code>print(summary(fm_2)) # no effect</code></pre>
 <pre><code>## 
 ## Call:
@@ -431,8 +437,11 @@ print(&quot;Does neonic exposure during planting affect bee population change (a
 ## Multiple R-squared:  0.1449, Adjusted R-squared:  -0.2827 
 ## F-statistic: 0.3388 on 3 and 6 DF,  p-value: 0.7986</code></pre>
 <pre class="r"><code>fm_3 &lt;- lm(open_chg_total~mean_ct_planting+open_initial+pollen_chg_total,data=site_wide)
-print(&quot;Does neonic exposure during planting affect change in open brood area throughout the season?&quot;)</code></pre>
-<pre><code>## [1] &quot;Does neonic exposure during planting affect change in open brood area throughout the season?&quot;</code></pre>
+cat(&quot;-------------------------------------\n\n&quot;,
+    &quot;Does neonic exposure during planting affect change in open brood area throughout the season?\n&quot;)</code></pre>
+<pre><code>## -------------------------------------
+## 
+##  Does neonic exposure during planting affect change in open brood area throughout the season?</code></pre>
 <pre class="r"><code>print(summary(fm_3)) # no effect</code></pre>
 <pre><code>## 
 ## Call:
@@ -456,8 +465,11 @@ print(&quot;Does neonic exposure during planting affect change in open brood are
 ## Multiple R-squared:  0.8343, Adjusted R-squared:  0.7514 
 ## F-statistic: 10.07 on 3 and 6 DF,  p-value: 0.009313</code></pre>
 <pre class="r"><code>fm_4 &lt;- lm(cap_chg_total~mean_ct_planting+cap_initial+pollen_chg_total,data=site_wide)
-print(&quot;Does neonic exposure during planting affect change in capped brood area throughout the season?&quot;)</code></pre>
-<pre><code>## [1] &quot;Does neonic exposure during planting affect change in capped brood area throughout the season?&quot;</code></pre>
+cat(&quot;-------------------------------------\n\n&quot;,
+    &quot;Does neonic exposure during planting affect change in capped brood area throughout the season?\n&quot;)</code></pre>
+<pre><code>## -------------------------------------
+## 
+##  Does neonic exposure during planting affect change in capped brood area throughout the season?</code></pre>
 <pre class="r"><code>print(summary(fm_4)) # no effect </code></pre>
 <pre><code>## 
 ## Call:
@@ -481,8 +493,11 @@ print(&quot;Does neonic exposure during planting affect change in capped brood a
 ## Multiple R-squared:  0.5341, Adjusted R-squared:  0.3011 
 ## F-statistic: 2.292 on 3 and 6 DF,  p-value: 0.1781</code></pre>
 <pre class="r"><code>fm_5 &lt;- lm(pollen_chg_total~mean_ct_planting+pollen_initial,data=site_wide)
-print(&quot;Does neonic exposure during planting affect change in pollen throughout the season?&quot;)</code></pre>
-<pre><code>## [1] &quot;Does neonic exposure during planting affect change in pollen throughout the season?&quot;</code></pre>
+cat(&quot;-------------------------------------\n\n&quot;,
+    &quot;Does neonic exposure during planting affect change in pollen throughout the season?\n&quot;)</code></pre>
+<pre><code>## -------------------------------------
+## 
+##  Does neonic exposure during planting affect change in pollen throughout the season?</code></pre>
 <pre class="r"><code>print(summary(fm_5))# borderline positive effect on pollen change</code></pre>
 <pre><code>## 
 ## Call:
@@ -505,8 +520,11 @@ print(&quot;Does neonic exposure during planting affect change in pollen through
 ## Multiple R-squared:  0.7688, Adjusted R-squared:  0.7027 
 ## F-statistic: 11.64 on 2 and 7 DF,  p-value: 0.005946</code></pre>
 <pre class="r"><code>fm_6 &lt;- lm(nectar_chg_total~mean_ct_planting+nectar_initial + pollen_chg_total,data=site_wide)
-print(&quot;Does neonic exposure during planting affect change in nectar throughout the season?&quot;)</code></pre>
-<pre><code>## [1] &quot;Does neonic exposure during planting affect change in nectar throughout the season?&quot;</code></pre>
+cat(&quot;-------------------------------------\n\n&quot;,
+    &quot;Does neonic exposure during planting affect change in nectar throughout the season?\n&quot;)</code></pre>
+<pre><code>## -------------------------------------
+## 
+##  Does neonic exposure during planting affect change in nectar throughout the season?</code></pre>
 <pre class="r"><code>print(summary(fm_6))# no effect </code></pre>
 <pre><code>## 
 ## Call:
@@ -527,6 +545,170 @@ print(&quot;Does neonic exposure during planting affect change in nectar through
 ## Residual standard error: 5332 on 6 degrees of freedom
 ## Multiple R-squared:  0.592,  Adjusted R-squared:  0.388 
 ## F-statistic: 2.902 on 3 and 6 DF,  p-value: 0.1236</code></pre>
+<p>What about more immediate effects during just the first interval (April-May)?</p>
+<pre class="r"><code>fm_1 &lt;- lm(seam_chg_1~mean_ct_planting + seam_initial + pollen_chg_1 , data=site_wide)
+cat(&quot;-------------------------------------\n\n&quot;,
+    &quot;Does neonic exposure during planting affect bee population change (as measured by # of seams) from April to May?\n&quot;)</code></pre>
+<pre><code>## -------------------------------------
+## 
+##  Does neonic exposure during planting affect bee population change (as measured by # of seams) from April to May?</code></pre>
+<pre class="r"><code>print(summary(fm_1)) # no effect</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = seam_chg_1 ~ mean_ct_planting + seam_initial + pollen_chg_1, 
+##     data = site_wide)
+## 
+## Residuals:
+##    Min     1Q Median     3Q    Max 
+## -4.485 -1.653  0.130  1.866  4.412 
+## 
+## Coefficients:
+##                   Estimate Std. Error t value Pr(&gt;|t|)  
+## (Intercept)      14.043956   4.119315   3.409   0.0143 *
+## mean_ct_planting -0.118500   0.068837  -1.721   0.1360  
+## seam_initial     -0.611036   0.238281  -2.564   0.0427 *
+## pollen_chg_1     -0.002248   0.001555  -1.446   0.1984  
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 3.372 on 6 degrees of freedom
+## Multiple R-squared:  0.5862, Adjusted R-squared:  0.3794 
+## F-statistic: 2.834 on 3 and 6 DF,  p-value: 0.1285</code></pre>
+<pre class="r"><code>fm_2 &lt;- lm(bee_chg_1~mean_ct_planting+bee_initial+pollen_chg_1,data=site_wide)
+cat(&quot;-------------------------------------\n\n&quot;,
+    &quot;Does neonic exposure during planting affect bee population change (as measured by frame area covered by bees) from April to May?\n&quot;)</code></pre>
+<pre><code>## -------------------------------------
+## 
+##  Does neonic exposure during planting affect bee population change (as measured by frame area covered by bees) from April to May?</code></pre>
+<pre class="r"><code>print(summary(fm_2)) # no effect</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = bee_chg_1 ~ mean_ct_planting + bee_initial + pollen_chg_1, 
+##     data = site_wide)
+## 
+## Residuals:
+##    Min     1Q Median     3Q    Max 
+##  -6418  -1911  -1090   1972   8437 
+## 
+## Coefficients:
+##                   Estimate Std. Error t value Pr(&gt;|t|)
+## (Intercept)      4679.3549  4898.5848   0.955    0.376
+## mean_ct_planting  -64.3828   104.9244  -0.614    0.562
+## bee_initial        -0.2757     0.4417  -0.624    0.555
+## pollen_chg_1        0.4186     1.8082   0.232    0.825
+## 
+## Residual standard error: 5200 on 6 degrees of freedom
+## Multiple R-squared:  0.1349, Adjusted R-squared:  -0.2977 
+## F-statistic: 0.3118 on 3 and 6 DF,  p-value: 0.8167</code></pre>
+<pre class="r"><code>fm_3 &lt;- lm(open_chg_1~mean_ct_planting+open_initial+pollen_chg_1,data=site_wide)
+cat(&quot;-------------------------------------\n\n&quot;,
+    &quot;Does neonic exposure during planting affect change in open brood area from April to May?\n&quot;)</code></pre>
+<pre><code>## -------------------------------------
+## 
+##  Does neonic exposure during planting affect change in open brood area from April to May?</code></pre>
+<pre class="r"><code>print(summary(fm_3)) # no effect</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = open_chg_1 ~ mean_ct_planting + open_initial + pollen_chg_1, 
+##     data = site_wide)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -1631.8 -1040.4   194.4  1006.4  1803.9 
+## 
+## Coefficients:
+##                    Estimate Std. Error t value Pr(&gt;|t|)  
+## (Intercept)      3393.55709 2269.75798   1.495   0.1855  
+## mean_ct_planting   -8.75997   33.42047  -0.262   0.8020  
+## open_initial       -1.19444    0.58565  -2.040   0.0875 .
+## pollen_chg_1        0.05989    0.83115   0.072   0.9449  
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 1520 on 6 degrees of freedom
+## Multiple R-squared:  0.7125, Adjusted R-squared:  0.5687 
+## F-statistic: 4.955 on 3 and 6 DF,  p-value: 0.04603</code></pre>
+<pre class="r"><code>fm_4 &lt;- lm(cap_chg_1~mean_ct_planting+cap_initial+pollen_chg_1,data=site_wide)
+cat(&quot;-------------------------------------\n\n&quot;,
+    &quot;Does neonic exposure during planting affect change in capped brood area from April to May?\n&quot;)</code></pre>
+<pre><code>## -------------------------------------
+## 
+##  Does neonic exposure during planting affect change in capped brood area from April to May?</code></pre>
+<pre class="r"><code>print(summary(fm_4)) # no effect </code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = cap_chg_1 ~ mean_ct_planting + cap_initial + pollen_chg_1, 
+##     data = site_wide)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -2443.6 -1648.6    65.7   891.9  3524.2 
+## 
+## Coefficients:
+##                   Estimate Std. Error t value Pr(&gt;|t|)
+## (Intercept)      2808.2463  3446.5115   0.815    0.446
+## mean_ct_planting    6.9966    52.7768   0.133    0.899
+## cap_initial        -0.6592     0.6904  -0.955    0.377
+## pollen_chg_1        0.2284     1.1258   0.203    0.846
+## 
+## Residual standard error: 2348 on 6 degrees of freedom
+## Multiple R-squared:  0.3848, Adjusted R-squared:  0.07721 
+## F-statistic: 1.251 on 3 and 6 DF,  p-value: 0.3716</code></pre>
+<pre class="r"><code>fm_5 &lt;- lm(pollen_chg_1~mean_ct_planting+pollen_initial,data=site_wide)
+cat(&quot;-------------------------------------\n\n&quot;,
+    &quot;Does neonic exposure during planting affect change in pollen from April to May?\n&quot;)</code></pre>
+<pre><code>## -------------------------------------
+## 
+##  Does neonic exposure during planting affect change in pollen from April to May?</code></pre>
+<pre class="r"><code>print(summary(fm_5))# borderline positive effect on pollen change</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = pollen_chg_1 ~ mean_ct_planting + pollen_initial, 
+##     data = site_wide)
+## 
+## Residuals:
+##    Min     1Q Median     3Q    Max 
+## -710.0 -553.0 -136.1  457.3 1243.4 
+## 
+## Coefficients:
+##                   Estimate Std. Error t value Pr(&gt;|t|)  
+## (Intercept)      1493.9694   636.9703   2.345   0.0514 .
+## mean_ct_planting   -7.2011    15.7162  -0.458   0.6607  
+## pollen_initial     -0.6502     0.1906  -3.411   0.0113 *
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 737.2 on 7 degrees of freedom
+## Multiple R-squared:  0.6398, Adjusted R-squared:  0.5369 
+## F-statistic: 6.217 on 2 and 7 DF,  p-value: 0.02804</code></pre>
+<pre class="r"><code>fm_6 &lt;- lm(nectar_chg_1~mean_ct_planting+nectar_initial + pollen_chg_1,data=site_wide)
+cat(&quot;-------------------------------------\n\n&quot;,
+    &quot;Does neonic exposure during planting affect change in nectar from April to May?\n&quot;)</code></pre>
+<pre><code>## -------------------------------------
+## 
+##  Does neonic exposure during planting affect change in nectar from April to May?</code></pre>
+<pre class="r"><code>print(summary(fm_6))# no effect </code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = nectar_chg_1 ~ mean_ct_planting + nectar_initial + 
+##     pollen_chg_1, data = site_wide)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -3595.3 -2210.1  -385.8  1761.7  5844.7 
+## 
+## Coefficients:
+##                   Estimate Std. Error t value Pr(&gt;|t|)  
+## (Intercept)      7191.9076  3918.5120   1.835   0.1161  
+## mean_ct_planting  -63.1331    76.2740  -0.828   0.4395  
+## nectar_initial      0.8227     0.9634   0.854   0.4259  
+## pollen_chg_1       -3.7795     1.6047  -2.355   0.0567 .
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 3655 on 6 degrees of freedom
+## Multiple R-squared:  0.769,  Adjusted R-squared:  0.6536 
+## F-statistic:  6.66 on 3 and 6 DF,  p-value: 0.02449</code></pre>
 </div>
 
 
