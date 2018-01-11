@@ -24,6 +24,8 @@ To address:
 
 3. Changes in hive health could also be related to differences in pollen collection (which may in turn be driven by percent corn nearby). We can try using the change in pollen area as a covariate. 
 
+4. Instead of throwing out a whole site, we can remove the one sampling point that had the very high clo and thia concentrations
+
 Distribution
 ========================================================
 The git repo holding this code is available at:
@@ -85,7 +87,9 @@ https://github.com/puruckertom/rare_pollen/blob/master/data_in/rare_data_osu_201
 ##################
 #import raw data - everything
 #file.exists(paste(osu_data,"CDRC_2017EPA_FP_DBT.csv",sep=""))
-osu_covariate <- read.table(paste(osu_data,"CDRC_2017EPA_FP_DBT_clean.csv",sep=""), header = TRUE, 
+
+#Using neonic dataset with one high outlier sampling point removed (site FSR, 5/2/2015)
+osu_covariate <- read.table(paste(osu_data,"CDRC_2017EPA_FP_DBT_clean_no_outlier.csv",sep=""), header = TRUE, 
                             sep = ",",strip.white=T,na.strings=c("","NA"))
 interval_site <- read.csv(paste(osu_data,"interval_site_level.csv",sep=""),header=T, stringsAsFactors = T)
 
@@ -193,6 +197,10 @@ total_chg <- cbind(hive_no = frame_wide$hive_no, site_code = frame_wide$site_cod
 total_chg <- do.call(data.frame,lapply(total_chg, function(x) replace(x, is.infinite(x),NA)))
 colnames(total_chg)[2:ncol(total_chg)] <- gsub("_8","_pchg_total",colnames(total_chg)[2:ncol(total_chg)]) 
 
+#create relative change vars for intervals 1, 2 and 3
+months <- c(4,5,6,8)
+
+
 
 ##create initial value variables
 
@@ -287,20 +295,20 @@ Let's also account for the initial characteristics of the hive at the start of t
 fm_1 <- lm(seam_chg_total~mean_ct_planting + seam_initial + pollen_chg_total , data=site_wide)
 cat("-------------------------------------\n\n",
     "Does neonic exposure during planting affect bee population change (as measured by # of seams) throughout the season?\n")
-print(summary(fm_1)) # no effect
+print(summary(fm_1)) # borderline negative effect
 #hist(resid(fm_1))
 
 fm_2 <- lm(bee_chg_total~mean_ct_planting+bee_initial+pollen_chg_total,data=site_wide)
 cat("-------------------------------------\n\n",
     "Does neonic exposure during planting affect bee population change (as measured by frame area covered by bees) throughout the season?\n")
-print(summary(fm_2)) # no effect
+print(summary(fm_2)) # borderline negative effect
 #hist(resid(fm_2))
 
 
 fm_3 <- lm(open_chg_total~mean_ct_planting+open_initial+pollen_chg_total,data=site_wide)
 cat("-------------------------------------\n\n",
     "Does neonic exposure during planting affect change in open brood area throughout the season?\n")
-print(summary(fm_3)) # no effect
+print(summary(fm_3)) # significant negative effect
 #hist(resid(fm_3))
 
 
@@ -310,7 +318,7 @@ cat("-------------------------------------\n\n",
 print(summary(fm_4)) # no effect 
 #hist(resid(fm_4))
 
-fm_5 <- lm(pollen_chg_total~mean_ct_planting+pollen_initial,data=site_wide)
+fm_5 <- lm(pollen_chg_total~mean_ct_planting*per_corn+pollen_initial,data=site_wide)
 cat("-------------------------------------\n\n",
     "Does neonic exposure during planting affect change in pollen throughout the season?\n")
 print(summary(fm_5))# borderline positive effect on pollen change
@@ -334,7 +342,7 @@ What about more immediate effects during just the first interval (April-May)?
 fm_1 <- lm(seam_chg_1~mean_ct_planting + seam_initial + pollen_chg_1 , data=site_wide)
 cat("-------------------------------------\n\n",
     "Does neonic exposure during planting affect bee population change (as measured by # of seams) from April to May?\n")
-print(summary(fm_1)) # no effect
+print(summary(fm_1)) # sig negative effect on seams of bees
 
 fm_2 <- lm(bee_chg_1~mean_ct_planting+bee_initial+pollen_chg_1,data=site_wide)
 cat("-------------------------------------\n\n",
@@ -351,7 +359,7 @@ cat("-------------------------------------\n\n",
     "Does neonic exposure during planting affect change in capped brood area from April to May?\n")
 print(summary(fm_4)) # no effect 
 
-fm_5 <- lm(pollen_chg_1~mean_ct_planting+pollen_initial,data=site_wide)
+fm_5 <- lm(pollen_chg_1~mean_ct_planting*per_corn+pollen_initial,data=site_wide)
 cat("-------------------------------------\n\n",
     "Does neonic exposure during planting affect change in pollen from April to May?\n")
 print(summary(fm_5))# borderline positive effect on pollen change
@@ -369,3 +377,128 @@ Conclusions for site-level analysis
 ========================================================
 
 
+
+
+
+
+Analyzing hive-level data through time
+=======================================================
+```{r eval=T, echo=T}
+
+#Add neonic measurements to hive-level dataset
+neonic_data <- site_wide[,grepl("_clo|_thi|_ct|site_code",colnames(site_wide))]
+frame_data <- merge(frame_data,neonic_data,by.x="site_abv",by.y = "site_code")
+frame_data$time <- frame_data$month - 4
+frame_data$hive_no <- factor(frame_data$hive_no)
+
+
+#Look at hive health through time - as affected by clo+thi during planting
+
+fm_bees <- lm(bees_cm2 ~ mean_ct_planting * time  + site_abv, data = frame_data)
+summary(fm_bees) #bees increases through time, no effect of clo+thi during planting
+
+fm_seams <- lm(seams_bees ~ mean_ct_planting * time  +site_abv,data = frame_data)
+summary(fm_seams) # no change through time, *sig clo_thi effect*: more clo_thi during planting = less seams with bees
+
+fm_open <- lm(open_cm2 ~ mean_ct_planting * time + site_abv , data = frame_data)
+summary(fm_open) # no change through time, no effect of clo+thi during planting
+
+fm_capped <- lm(capped_cm2 ~ mean_ct_planting * time  +site_abv , data = frame_data)
+summary(fm_capped) # no change through time, no effect of clo+thi during planting
+
+fm_pollen <- lm(pollen_cm2 ~ mean_ct_planting * time  +site_abv, data = frame_data)
+summary(fm_pollen) # pollen increases through time. hives exposed to more clo_thi during planting have less pollen but this effect diminishes through time
+
+fm_nectar<- lm(nectar_cm2 ~ mean_ct_planting * time + site_abv, data = frame_data)
+summary(fm_nectar) # no change through time, no clo+thi effect
+
+
+
+#Look at hive health through time - as affected by clo+thi for ALL OF MAY
+fm_bees <- lm(bees_cm2 ~ mean_ct_planting * time  + site_abv, data = frame_data)
+summary(fm_bees) #bees increases through time, no effect of clo+thi during planting
+
+fm_seams <- lm(seams_bees ~ mean_ct_planting * time  +site_abv,data = frame_data)
+summary(fm_seams) # no change through time, *sig clo_thi effect*: more clo_thi during planting = less seams with bees
+
+fm_open <- lm(open_cm2 ~ mean_ct_planting * time + site_abv , data = frame_data)
+summary(fm_open) # no change through time, no effect of clo+thi during planting
+
+fm_capped <- lm(capped_cm2 ~ mean_ct_planting * time  +site_abv , data = frame_data)
+summary(fm_capped) # no change through time, no effect of clo+thi during planting
+
+fm_pollen <- lm(pollen_cm2 ~ mean_ct_planting * time  +site_abv, data = frame_data)
+summary(fm_pollen) # pollen increases through time. hives exposed to more clo_thi during planting have less pollen but this effect diminishes through time
+
+fm_nectar<- lm(nectar_cm2 ~ mean_ct_planting * time + site_abv, data = frame_data)
+summary(fm_nectar) # no change through time, no clo+thi effect
+
+```
+ 
+###Let's visualize some of these hive health parameters through time
+<br><br>
+
+Across all hives:
+```{r eval=T, echo=T}
+
+health_vars <- c("seams_bees","bees_cm2","capped_cm2","open_cm2","pollen_cm2","nectar_cm2")
+for (i in 1:length(health_vars)){
+  g <- ggplot(frame_data,aes_string("time",health_vars[i])) +geom_point(na.rm=T,size=2.5)+
+    geom_smooth(method="lm",formula=y~x,na.rm=T,size=2)+theme_bw()+
+    theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank())+
+   # coord_cartesian(ylim=c(0,max(osu_covariate[,interesting_neonics[i]],na.rm=T)+10)) +
+    labs(x="Months since April")
+  print(g)
+}
+
+```
+
+Within each site:
+
+```{r eval=T, echo=T}
+health_vars <- c("seams_bees","bees_cm2","capped_cm2","open_cm2","pollen_cm2","nectar_cm2")
+for (i in 1:length(health_vars)){
+  g <- ggplot(frame_data,aes_string("time",health_vars[i])) +geom_point(na.rm=T,size=1)+
+    geom_smooth(method="lm",formula=y~x,na.rm=T,size=1)+theme_bw()+ facet_wrap(~site_abv,nrow=3,labeller=label_both)+
+    theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank())+
+   # coord_cartesian(ylim=c(0,max(osu_covariate[,interesting_neonics[i]],na.rm=T)+10)) +
+    labs(x="Months since April")
+  print(g)
+}
+
+```
+
+
+###Let's visualize the significant clo+thi effect on seams of bees  
+
+Note: it is difficult to see this effect without accounting for the effect of time (and site?)
+<br><br>
+
+```{r eval=T, echo=T, fig.width = 5, fig.height=4}
+g <- ggplot(frame_data,aes_string("mean_ct_planting","seams_bees")) +geom_point(na.rm=T,size=2.5)+
+    geom_smooth(method="lm",formula=y~x,na.rm=T,size=2)+theme_bw()+ 
+    theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank())+
+   # coord_cartesian(ylim=c(0,max(osu_covariate[,interesting_neonics[i]],na.rm=T)+10)) +
+    labs(x="Mean clo + thi in pollen during planting")
+print(g)
+
+
+```
+
+
+
+###Finally, let's visualize the significant clo+thi effect on pollen (through time)
+
+Note: it is difficult to see this effect without accounting for the effect of time (and site?)
+<br><br>
+
+```{r eval=T, echo=T, fig.width = 5, fig.height=4}
+g <- ggplot(frame_data,aes_string("mean_ct_planting","pollen_cm2")) +geom_point(na.rm=T,size=2.5)+
+    geom_smooth(method="lm",formula=y~x,na.rm=T,size=2)+theme_bw()+ facet_wrap(~time,nrow=2,labeller=label_both)+
+    theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank())+
+   # coord_cartesian(ylim=c(0,max(osu_covariate[,interesting_neonics[i]],na.rm=T)+10)) +
+    labs(x="Mean clo + thi in pollen during planting")
+print(g)
+
+
+```
