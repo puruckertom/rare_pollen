@@ -754,7 +754,7 @@ summary(fm_bees_r3) # no effect
 
 
 fm_open_r3 <- lm(open_relchg_3 ~ mean_ct_may, data=site_wide) 
-summary(fm_open_r3) # significant decrease
+summary(fm_open_r3) # significant decrease - driven by one outlier only
 
 
 fm_capped_r3 <- lm(capped_relchg_3 ~ mean_ct_may , data=site_wide)
