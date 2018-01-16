@@ -145,6 +145,7 @@ interval_site <- merge(interval_site,site_means,by="site_code")
 # Write cleaned data to csv
 #write.csv(interval_site,paste(osu_data,"interval_site_level_clean.csv",sep=""))
 
+
 ## Convert intervals from long to wide
 keep<- colnames(interval_site)[!grepl("chg|interval|n_hives",colnames(interval_site))]
 site_wide <- reshape(interval_site,idvar=keep,timevar="interval",direction="wide",sep="_",
@@ -233,9 +234,67 @@ colnames(site_wide)[colnames(site_wide) == "mean_total_may"] <- "mean_ct_may"
 colnames(site_wide)[colnames(site_wide) == "mean_total_planting"] <- "mean_ct_planting"
 
 
+###Create hive health regression slopes (entire time interval)
+
+frame_data$time <- frame_data$month - 4
+frame_data$hive_no <- factor(frame_data$hive_no)
+health_vars <- c("seams_bees","bees_cm2","capped_cm2","open_cm2","pollen_cm2","nectar_cm2")
+sites <- levels(frame_data$site_abv)[2:11]
+betas_site <- matrix(,nrow=length(sites),ncol=length(health_vars))
+for(i in 1:length(health_vars)){
+  
+  
+  for(j in 1:length(sites)){
+    betas_site[j,i] <- lm(as.formula(paste(health_vars[i],"~ time")),data=subset(frame_data,site_abv == sites[j]))$coefficients[2]
+    
+  }
+}
+betas_site <- data.frame(site_abv = sites, betas_site)
+colnames(betas_site) <- c("site_code",health_vars)
+
+#Merge hive health regression slopes back to site level wide dataset 
+site_wide <- merge(site_wide,betas_site,by = "site_code")
 
 
-## Make dataset analagous to original set but with relative changes instead of absolute
+###Create hive health regression slopes (time points 1 to 3)
+
+health_vars <- c("seams_bees","bees_cm2","capped_cm2","open_cm2","pollen_cm2","nectar_cm2")
+sites <- levels(frame_data$site_abv)[2:11]
+betas_site <- matrix(,nrow=length(sites),ncol=length(health_vars))
+for(i in 1:length(health_vars)){
+  
+  
+  for(j in 1:length(sites)){
+    betas_site[j,i] <- lm(as.formula(paste(health_vars[i],"~ time")),data=subset(frame_data,site_abv == sites[j] & time != 4))$coefficients[2]
+    
+  }
+}
+betas_site <- data.frame(site_abv = sites, betas_site)
+colnames(betas_site) <- c("site_code",paste(health_vars,"1st",sep="_"))
+
+#Merge hive health regression slopes back to site level wide dataset 
+site_wide <- merge(site_wide,betas_site,by = "site_code")
+
+
+
+###Create hive health regression slopes (final time period)
+
+health_vars <- c("seams_bees","bees_cm2","capped_cm2","open_cm2","pollen_cm2","nectar_cm2")
+sites <- levels(frame_data$site_abv)[2:11]
+betas_site <- matrix(,nrow=length(sites),ncol=length(health_vars))
+for(i in 1:length(health_vars)){
+  
+  
+  for(j in 1:length(sites)){
+    betas_site[j,i] <- lm(as.formula(paste(health_vars[i],"~ time")),data=subset(frame_data,site_abv == sites[j] & !(time %in% c(0,1))))$coefficients[2]
+    
+  }
+}
+betas_site <- data.frame(site_abv = sites, betas_site)
+colnames(betas_site) <- c("site_code",paste(health_vars,"2nd",sep="_"))
+
+#Merge hive health regression slopes back to site level wide dataset 
+site_wide <- merge(site_wide,betas_site,by = "site_code")
 
 ```
 
@@ -388,8 +447,7 @@ Analyzing hive-level data through time
 #Add neonic measurements to hive-level dataset
 neonic_data <- site_wide[,grepl("_clo|_thi|_ct|site_code",colnames(site_wide))]
 frame_data <- merge(frame_data,neonic_data,by.x="site_abv",by.y = "site_code")
-frame_data$time <- frame_data$month - 4
-frame_data$hive_no <- factor(frame_data$hive_no)
+
 
 
 #Look at hive health through time - as affected by clo+thi during planting
@@ -507,6 +565,234 @@ g <- ggplot(frame_data,aes_string("mean_ct_planting","pollen_cm2")) +geom_point(
    # coord_cartesian(ylim=c(0,max(osu_covariate[,interesting_neonics[i]],na.rm=T)+10)) +
     labs(x="Mean clo + thi in pollen during planting")
 print(g)
+
+
+```
+
+
+
+Analysis using health hive through time regression slopes
+===========================================
+
+
+### Entire study
+```{r echo=T,eval=T}
+
+fm_bees <- lm(bees_cm2 ~ mean_ct_planting, data = site_wide)
+summary(fm_bees) 
+
+fm_seams <- lm(seams_bees ~  mean_ct_planting, data = site_wide)
+summary(fm_seams) 
+
+fm_open <- lm(open_cm2 ~  mean_ct_planting, data = site_wide)
+summary(fm_open) 
+
+fm_capped <- lm(capped_cm2 ~  mean_ct_planting, data = site_wide)
+summary(fm_capped) 
+
+fm_pollen <- lm(pollen_cm2 ~  mean_ct_planting, data = site_wide)
+summary(fm_pollen) #borderline sig + effect
+
+fm_nectar<- lm(nectar_cm2 ~  mean_ct_planting, data = site_wide)
+summary(fm_nectar) 
+
+
+```
+
+### First half of study
+
+```{r echo=T,eval=T}
+
+fm_bees <- lm(bees_cm2_1st ~ mean_ct_planting, data = site_wide)
+summary(fm_bees) 
+
+fm_seams <- lm(seams_bees_1st  ~  mean_ct_planting, data = site_wide)
+summary(fm_seams) 
+
+fm_open <- lm(open_cm2_1st  ~  mean_ct_planting, data = site_wide)
+summary(fm_open) 
+
+fm_capped <- lm(capped_cm2_1st  ~  mean_ct_planting, data = site_wide)
+summary(fm_capped) 
+
+fm_pollen <- lm(pollen_cm2_1st  ~  mean_ct_planting, data = site_wide)
+summary(fm_pollen) #borderline sig + effect
+
+fm_nectar<- lm(nectar_cm2_1st  ~  mean_ct_planting, data = site_wide)
+summary(fm_nectar) 
+
+
+```
+
+### Second half of study
+```{r echo=T,eval=T}
+
+fm_bees <- lm(bees_cm2_2nd ~ mean_ct_planting, data = site_wide)
+summary(fm_bees) 
+
+fm_seams <- lm(seams_bees_2nd ~  mean_ct_planting, data = site_wide)
+summary(fm_seams) 
+
+fm_open <- lm(open_cm2_2nd ~  mean_ct_planting, data = site_wide)
+summary(fm_open) 
+
+fm_capped <- lm(capped_cm2_2nd ~  mean_ct_planting, data = site_wide)
+summary(fm_capped) 
+
+fm_pollen <- lm(pollen_cm2_2nd ~  mean_ct_planting, data = site_wide)
+summary(fm_pollen) #sig + effect
+
+fm_nectar<- lm(nectar_cm2_2nd ~  mean_ct_planting, data = site_wide)
+summary(fm_nectar) 
+
+
+```
+
+
+Analyzing relative change in hive health
+=======================================================
+```{r eval=T, echo=T}
+
+
+
+health_vars <- c("seams_bees","bees_cm2","capped_cm2","open_cm2","pollen_cm2","nectar_cm2")
+months <- c("4","5","6","8")
+frame_wide_simple <- frame_wide[,colnames(frame_wide) %in% c("hive_no","site_code",as.vector(outer(health_vars,months,paste,sep="_")))]
+
+# take averages at site level
+aggregated_site <- aggregate( . ~ site_code  ,data=frame_wide_simple[,-2],FUN=mean,na.rm=T)
+
+# relative changes for each interval (and overall)
+for(i in 1:length(health_vars)){
+  aggregated_site[[paste(strsplit(health_vars[i],"_")[[1]][1],"_relchg_1",sep="")]] <- (aggregated_site[[paste(health_vars[i],"_5",sep="")]] - aggregated_site[[paste(health_vars[i],"_4",sep="")]]) / 
+    aggregated_site[[paste(health_vars[i],"_4",sep="")]] * 100
+  
+  aggregated_site[[paste(strsplit(health_vars[i],"_")[[1]][1],"_relchg_2",sep="")]] <- (aggregated_site[[paste(health_vars[i],"_6",sep="")]] - aggregated_site[[paste(health_vars[i],"_5",sep="")]]) / 
+    aggregated_site[[paste(health_vars[i],"_5",sep="")]] * 100
+  
+  
+  aggregated_site[[paste(strsplit(health_vars[i],"_")[[1]][1],"_relchg_3",sep="")]] <- (aggregated_site[[paste(health_vars[i],"_8",sep="")]] - aggregated_site[[paste(health_vars[i],"_6",sep="")]]) / 
+    aggregated_site[[paste(health_vars[i],"_6",sep="")]] * 100
+  
+  
+  aggregated_site[[paste(strsplit(health_vars[i],"_")[[1]][1],"_relchg_total",sep="")]] <- (aggregated_site[[paste(health_vars[i],"_8",sep="")]] - aggregated_site[[paste(health_vars[i],"_4",sep="")]]) / 
+    aggregated_site[[paste(health_vars[i],"_4",sep="")]] * 100
+  
+}
+
+#merge relative changes into site level dataset
+site_wide <- merge(site_wide,aggregated_site,by="site_code")
+site_wide <- do.call(data.frame,lapply(site_wide, function(x) replace(x, is.infinite(x),NA)))
+
+
+#Look at pairwise correlations between neonic conc. and relative health changes over time
+
+#interval 1
+res <- cor.mtest(site_wide[,grepl("_relchg_1|may|planting",colnames(site_wide))],na.action=na.omit)
+corrplot(cor(site_wide[,grepl("_relchg_1|may|planting",colnames(site_wide))],use="complete.obs"),
+         type="upper",tl.col="black",tl.srt=90,p.mat=res$p,
+         insig="label_sig",pch="*",pch.cex=1,pch.col="white")
+
+#interval 2
+res <- cor.mtest(site_wide[,grepl("_relchg_2|may|planting",colnames(site_wide))],na.action=na.omit)
+corrplot(cor(site_wide[,grepl("_relchg_2|may|planting",colnames(site_wide))],use="complete.obs")
+         ,type="upper",tl.col="black",tl.srt=90,p.mat=res$p,
+         insig="label_sig",pch="*",pch.cex=1,pch.col="white")
+
+#interval 3
+res <- cor.mtest(site_wide[,grepl("_relchg_3|may|planting",colnames(site_wide))],na.action=na.omit)
+corrplot(cor(site_wide[,grepl("_relchg_3|may|planting",colnames(site_wide))],use="complete.obs"),
+         type="upper",tl.col="black",tl.srt=90,p.mat=res$p,
+         insig="label_sig",pch="*",pch.cex=1,pch.col="white")
+
+#entire study interval
+res <- cor.mtest(site_wide[,grepl("_relchg_total|may|planting",colnames(site_wide))],na.action=na.omit)
+corrplot(cor(site_wide[,grepl("_relchg_total|may|planting",colnames(site_wide))],use="complete.obs"),type="upper",
+         tl.col="black",tl.srt=90,p.mat=res$p,insig="label_sig",pch="*",pch.cex=1,pch.col="white")
+
+```
+
+```{r eval=T, echo=T}
+
+##interval 1 (Apr - May)
+
+fm_seams_r1 <- lm(seams_relchg_1 ~ mean_ct_may , data=site_wide)
+summary(fm_seams_r1) #significant reduction
+
+
+fm_bees_r1 <- lm(bees_relchg_1 ~ mean_ct_may + pollen_relchg_1, data=site_wide)
+summary(fm_bees_r1) #significant reduction
+
+
+fm_pollen_r1 <- lm(pollen_relchg_1 ~ mean_ct_may, data=site_wide)
+summary(fm_pollen_r1) # no effect on rel. pollen change 
+
+
+fm_nectar_r1 <- lm(nectar_relchg_1 ~ mean_ct_may , data=site_wide)
+summary(fm_nectar_r1) # no effect on nectar
+
+
+#interval 2 (May - June)
+
+
+fm_seams_r2 <- lm(seams_relchg_2 ~ mean_ct_may , data=site_wide)
+summary(fm_seams_r2) #significant increase 
+
+
+fm_bees_r2 <- lm(bees_relchg_2 ~ mean_ct_may , data=site_wide)
+summary(fm_bees_r2) # no effect
+
+
+#interval 3 (June - Aug)
+
+fm_seams_r3 <- lm(seams_relchg_3 ~ mean_ct_may , data=site_wide)
+summary(fm_seams_r3) # no effect
+
+
+fm_bees_r3 <- lm(bees_relchg_3 ~ mean_ct_may , data=site_wide)
+summary(fm_bees_r3) # no effect
+
+
+fm_open_r3 <- lm(open_relchg_3 ~ mean_ct_may, data=site_wide) 
+summary(fm_open_r3) # significant decrease
+
+
+fm_capped_r3 <- lm(capped_relchg_3 ~ mean_ct_may , data=site_wide)
+summary(fm_capped_r3) # no effect 
+
+
+fm_pollen_r3 <- lm(pollen_relchg_3 ~ mean_ct_may , data=site_wide)
+summary(fm_pollen_r3) # sig + effect
+
+
+fm_nectar_r3 <- lm(nectar_relchg_3 ~ mean_ct_may , data=site_wide)
+summary(fm_nectar_r3) # no effect
+
+
+
+#entire study interval (Apr - Aug)
+fm_seams_rt <- lm(seams_relchg_total ~ mean_ct_may, data=site_wide)
+summary(fm_seams_rt) # no effect
+
+
+fm_bees_rt <- lm(bees_relchg_total ~ mean_ct_may, data=site_wide)
+summary(fm_bees_rt) # no effect
+
+
+fm_open_rt <- lm(open_relchg_total ~ mean_ct_may , data=site_wide) 
+summary(fm_open_rt) # no effect
+
+
+fm_capped_rt <- lm(capped_relchg_total ~ mean_ct_may, data=site_wide)
+summary(fm_capped_rt) # no effect 
+
+
+fm_pollen_rt <- lm(pollen_relchg_total ~ mean_ct_may , data=site_wide)
+summary(fm_pollen_rt) # no effect
+
+
+fm_nectar_rt <- lm(nectar_relchg_total ~ mean_ct_may , data=site_wide)
+summary(fm_nectar_rt) # no effect
 
 
 ```
