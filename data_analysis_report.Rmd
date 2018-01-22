@@ -20,12 +20,12 @@ Analysis of 2015 rare data collected by Ohio State
 
 With May sampling period: 
 
-1. Determine whether greater neonic concentrations in pollen or dead bees were associated with greater bee mortality
+1. Determine whether greater neonic concentrations in pollen were associated with greater bee mortality
 2. Determine if neonic concentrations observed were related to the percent coverage of corn nearby.
 
 With the April - August hive health data:
 
-1. Examine whether greater neonic exposure in May (or during the corn planting period) was linked to long term consequences for hive health.
+3. Examine whether greater neonic exposure in May was linked to long term consequences for hive health.
 
 
 Technical points: 
@@ -394,4 +394,362 @@ site_wide <- do.call(data.frame,lapply(site_wide, function(x) replace(x, is.infi
 
 <br>
 
+Goal 1: Greater neonic concentrations in pollen associated with greater mortality?
+====================================
 
+### First, lets see if greater neonic concentrations were linked with higher mortality right when they were measured.
+
+```{r eval=T, echo=T}
+
+osu_covariate$FP_CT <- osu_covariate$FP_clothianidin + osu_covariate$FP_thiamethoxam #clo + thi 
+
+interesting_neonics <- c("FP_clothianidin","FP_thiamethoxam","FP_CT")
+names <- c("clothianidin", "thiamethoxam","clo + thi")
+
+for(i in 1:length(interesting_neonics)){
+  fm <- lm(as.formula(paste("mortality ~ ",interesting_neonics[i],
+                            sep="")),data=osu_covariate)
+  cat("-------------------------------------\n\n",
+      paste("Linear regression, ",names[i]," vs mortality:",sep=""),"\n")
+  print(summary(fm))
+  #hist(resid(fm))
+  g <- ggplot(osu_covariate,aes_string(interesting_neonics[i],"mortality"))+geom_point(na.rm=T,size=2.5)+
+    geom_smooth(method="lm",formula=y~x,na.rm=T,size=2)+theme_bw()+
+    theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank()) +
+    labs(x=paste(names[i],"in pollen (ng g-1)"),
+         y="Relative bee mortality")+geom_hline(yintercept=0)
+  print(g)
+}
+
+```
+
+
+Finding: At times in May when clothianidin and thiamethoxam concentrations were greater, hives nearby had greater relative bee mortality rates.  
+<br><br>
+
+#### Does this relationship between pollen concentrations and mortality hold if averaged over the whole month?
+
+
+```{r eval=T, echo=T}
+
+interesting_neonics_site_m <- c("mean_clo_may","mean_thi_may","mean_ct_may")
+names_site_m <- c("Mean pollen clothianidin in May","Mean pollen thiamethoxam in May","Mean pollen clo + thi in May")
+
+for(i in 1:length(interesting_neonics_site_m)){
+  fm <- lm(as.formula(paste("daily_mort_may ~ ",interesting_neonics_site_m[i],
+                            sep="")),data=site_wide)
+  cat("-------------------------------------\n\n",
+      paste("Linear regression, ",names_site_m[i]," vs mortality:",sep=""),"\n")
+  print(summary(fm))
+  #hist(resid(fm))
+  g <- ggplot(site_wide,aes_string(interesting_neonics_site_m[i],"daily_mort_may"))+geom_point(na.rm=T,size=2.5)+
+    geom_smooth(method="lm",formula=y~x,na.rm=T,size=2)+theme_bw()+
+    theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank()) +
+    labs(x=paste(names_site_m[i],"in pollen (ng g-1)"),
+         y="Mean relative bee mortality (May)")+geom_hline(yintercept=0)
+  print(g)
+}
+
+```
+
+Finding: No significant relationship between mean pollen neonic concentrations through May and mean relative bee mortality  
+<br><br>
+
+#### What about averaging just during the planting period? 
+
+```{r eval=T, echo=T}
+
+interesting_neonics_site_p <- c("mean_clo_planting","mean_thi_planting","mean_ct_planting")
+names_site_p <- c("Mean pollen clothianidin during planting",
+           "Mean pollen thiamethoxam during planting","Mean pollen clo + thi during planting")
+
+for(i in 1:length(interesting_neonics_site_p)){
+  fm <- lm(as.formula(paste("daily_mortality_plt ~ ",interesting_neonics_site_p[i],
+                            sep="")),data=site_wide)
+  cat("-------------------------------------\n\n",
+      paste("Linear regression, ",names_site_p[i]," vs mortality:",sep=""),"\n")
+  print(summary(fm))
+  #hist(resid(fm))
+  g <- ggplot(site_wide,aes_string(interesting_neonics_site_p[i],"daily_mortality_plt"))+geom_point(na.rm=T,size=2.5)+
+    geom_smooth(method="lm",formula=y~x,na.rm=T,size=2)+theme_bw()+
+    theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank()) +
+    labs(x=paste(names_site_p[i],"in pollen (ng g-1)"),
+         y="Mean relative bee mortality (planting)")+geom_hline(yintercept=0)
+  print(g)
+}
+
+```
+
+Finding: No significant relationship between mean pollen neonic concentrations through the planting period and mean relative bee mortality. 
+<br><br>
+
+
+
+Goal 1: overall findings
+===============================
+
+* When we look within each sampling time point, greater clothianidin or thiamethoxam concentrations in pollen were associated with significantly elevated bee mortality.
+
+* There is no significant relationship if we average neonic concentrations and bee mortality across May or the planting period. 
+
+<br><br>
+
+
+
+
+
+
+
+
+
+
+
+Goal 2: Neonic concentrations in pollen related to percent corn coverage nearby?
+===============================
+
+First, let's try using each time point during May. 
+
+Our approach will be to model pollen neonic concentration as a factor of:
+1. Percent corn nearby
+2. Whether or not it was a planting period (yes/no)
+3. Interaction between 1 and 2
+
+If the interaction is significant, it will indicate that effect of corn nearby on neonic conc. depends on whether it is during a planting period. 
+
+```{r eval=TRUE, echo=TRUE}
+interesting_neonics <- c("FP_thiamethoxam","FP_clothianidin","FP_CT")
+
+for(i in 1:length(interesting_neonics)){
+  fm <- lm(as.formula(paste(interesting_neonics[i],"~ per_corn * planting",
+                            sep="")),data=osu_covariate)
+  cat("-------------------------------------\n\n",paste("Linear regression, ",interesting_neonics[i]," vs percent corn:",sep=""),"\n")
+  print(summary(fm))
+  #hist(resid(fm))
+}
+cat("-------------------------------------\n\n")
+```
+
+Summary: There was no effect of percent corn nearby on clothianidin, thiamethoxam, or clo + thi. 
+<br><br>
+
+#### What if we look at percent corn nearby versus *mean* neonic concentration over May (or planting period)
+
+For May:
+
+```{r eval=TRUE, echo=TRUE}
+
+for(i in 1:length(interesting_neonics_site_m)){
+  fm <- lm(as.formula(paste(interesting_neonics_site_m[i],"~ per_corn",
+                            sep="")),data=site_wide)
+  cat("-------------------------------------\n\n",paste("Linear regression, ",names_site_m[i]," vs percent corn:",sep=""),"\n")
+  print(summary(fm))
+  #hist(resid(fm))
+}
+cat("-------------------------------------\n\n")
+```
+
+For planting period:
+
+```{r eval=TRUE, echo=TRUE}
+
+for(i in 1:length(interesting_neonics_site_p)){
+  fm <- lm(as.formula(paste(interesting_neonics_site_p[i],"~ per_corn",
+                            sep="")),data=site_wide)
+  cat("-------------------------------------\n\n",paste("Linear regression, ",names_site_p[i]," vs percent corn:",sep=""),"\n")
+  print(summary(fm))
+  #hist(resid(fm))
+}
+cat("-------------------------------------\n\n")
+```
+
+Summary: Percent corn nearby was NOT significantly related to average May or planting period neonic concentrations. (Note: The positive effect of percent corn nearby on planting period mean clo + thi was borderline significant - p=0.053)
+
+<br><br>
+
+#### Finally, were mean neonic concentrations greater during the planting period compared to the monthly average? 
+
+We can use a simple t test:
+```{r echo=T, eval=T}
+
+
+for(i in 1:length(interesting_neonics_site_p)){
+  fm <- t.test(site_wide[[interesting_neonics_site_p[i]]],site_wide[[interesting_neonics_site_m[i]]])
+  cat("-------------------------------------\n\n",paste("t-test, ",names_site_p[i]," vs montly average:",sep=""),"\n")
+  print(fm)
+  #hist(resid(fm))
+}
+cat("-------------------------------------\n\n")
+
+
+```
+
+Summary: For clothianidin and clo + thi, mean concentrations were greater during the planting period than the monthly average. For thiamethoxam, the difference was borderline significant (p=0.06)
+
+
+
+
+Goal 2: overall findings
+===============================
+
+* There was no significant effect of percent corn nearby on daily or mean neonic concentrations in pollen. 
+
+* But across all sites, mean clothianidin and clo + thi concentrations were significantly elevated during the planting period compared with the monthly average. 
+
+<br><br>
+
+
+
+
+
+
+
+
+
+Goal 3: Greater neonic exposure in May linked to long term consequences?
+===============================
+
+To address this question, we calculated relative changes in the six hive health variables:
+
+* area of bees
+* # of seams filled with bees
+* area of capped brood
+* area of open brood
+* area of pollen
+* area of nectar
+
+We looked at relative changes between each sampling point, as well as for the entire study:
+
+* interval 1: April - May
+* interval 2: May - June
+* interval 3: June - August
+* total interval: April - August
+
+Relative change (expressed as a %) was calculated as:
+
+$Rel. change = \frac{final - initial}{initial}*100$
+
+We also wanted to account for the idea that the negative effect of bees collecting neonic-contiminated pollen could be partially by the beneficial effect of increased food supply. Therefore, we included the relative change in hive pollen area as a potential covariate in our models.
+
+So, for each hive health variable and interval combination, we fit a multiple linear regression model of the form:
+<br>
+
+Relative change ~ (Mean clo + thi in May) + (relative change in pollen area over the same interval)
+<br>
+
+If the pollen change covariate was not significant, we dropped the term and refit the model. Note: pollen covariate not applicable when rel. change in pollen area was the main variable of interest. 
+
+<br><br>
+
+#### Summary of significant effects: 
+
+**For interval 1 (April - May): **
+
+Greater mean clo + thi in pollen in May was associated with:
+* less rel. change in *bee area*
+* less rel. change in *# of seams filled with bees*
+
+**For interval 2 (May - June): **
+
+Greater mean clo + thi in pollen in May was associated with:
+* greater rel. change in *# of seams filled with bees*
+
+**For interval 3 (June - August): **
+
+Greater mean clo + thi in pollen in May was associated with:
+* greater rel. change in *pollen area*
+* less rel. change in *open brood* - BUT driven by one outlier
+
+**For total interval (April - August): **
+
+No significant effects
+<br>
+
+##### Model summaries and plots of significant effects
+
+```{r echo=T,eval=T,fig.width=5,fig.height=4}
+
+## interval 1 ##
+
+fm_bees_r1 <- lm(bees_relchg_1 ~ mean_ct_may + pollen_relchg_1, data=site_wide)
+summary(fm_bees_r1) #significant reduction
+
+g <- ggplot(site_wide,aes(mean_ct_may,bees_relchg_1))+geom_point(na.rm=T,size=2.5)+
+    geom_smooth(method="lm",formula=y~x,na.rm=T,size=2)+theme_bw()+
+    theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank()) +
+    labs(x="Mean clo + thi in pollen in May (ng g-1)",
+         y="Rel. change in area of bees (%)")+geom_hline(yintercept=0) +
+  theme(plot.title = element_text(hjust = 0.5))
+print(g + ggtitle("Interval 1"))
+cat("-------------------------------------\n\n")
+
+
+fm_seams_r1 <- lm(seams_relchg_1 ~ mean_ct_may , data=site_wide)
+summary(fm_seams_r1) #significant reduction
+
+g <- ggplot(site_wide,aes(mean_ct_may,seams_relchg_1))+geom_point(na.rm=T,size=2.5)+
+    geom_smooth(method="lm",formula=y~x,na.rm=T,size=2)+theme_bw()+
+    theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank()) +
+    labs(x="Mean clo + thi in pollen in May (ng g-1)",
+         y="Rel. change in # of seams filled with bees (%)")+geom_hline(yintercept=0) +
+  theme(plot.title = element_text(hjust = 0.5))
+print(g + ggtitle("Interval 1"))
+cat("-------------------------------------\n\n")
+
+
+## interval 2 ##
+
+fm_seams_r2 <- lm(seams_relchg_2 ~ mean_ct_may , data=site_wide)
+summary(fm_seams_r2) #significant increase 
+
+g <- ggplot(site_wide,aes(mean_ct_may,seams_relchg_2))+geom_point(na.rm=T,size=2.5)+
+    geom_smooth(method="lm",formula=y~x,na.rm=T,size=2)+theme_bw()+ 
+    theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank()) +
+    labs(x="Mean clo + thi in pollen in May (ng g-1)",
+         y="Rel. change in # of seams filled with bees (%)")+geom_hline(yintercept=0) +
+  theme(plot.title = element_text(hjust = 0.5))
+print(g + ggtitle("Interval 2"))
+cat("-------------------------------------\n\n")
+
+
+## interval 3 ##
+
+fm_open_r3 <- lm(open_relchg_3 ~ mean_ct_may, data=site_wide) 
+summary(fm_open_r3) # significant decrease - driven by one outlier only
+
+g <- ggplot(site_wide,aes(mean_ct_may,open_relchg_3))+geom_point(na.rm=T,size=2.5)+
+    geom_smooth(method="lm",formula=y~x,na.rm=T,size=2)+theme_bw()+ 
+    theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank()) +
+    labs(x="Mean clo + thi in pollen in May (ng g-1)",
+         y="Rel. change in open brood area (%)")+geom_hline(yintercept=0) +
+  theme(plot.title = element_text(hjust = 0.5))
+print(g + ggtitle("Interval 3"))
+cat("-------------------------------------\n\n")
+
+
+fm_pollen_r3 <- lm(pollen_relchg_3 ~ mean_ct_may , data=site_wide)
+summary(fm_pollen_r3) # significant increase
+
+g <- ggplot(site_wide,aes(mean_ct_may,pollen_relchg_3))+geom_point(na.rm=T,size=2.5)+
+    geom_smooth(method="lm",formula=y~x,na.rm=T,size=2)+theme_bw()+ 
+    theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank()) +
+    labs(x="Mean clo + thi in pollen in May (ng g-1)",
+         y="Rel. change in pollen area (%)")+geom_hline(yintercept=0) +
+  theme(plot.title = element_text(hjust = 0.5))
+print(g + ggtitle("Interval 3"))
+cat("-------------------------------------\n\n")
+
+
+```
+
+
+
+Goal 3: overall findings
+===============================
+
+* Greater exposure to neonics in May was associated with a reduction in the relative population growth of the hive (as measured by area of bees and seams of bees) over the earliest time interval (late April to late May).
+
+* However, there may have been a recovery in the second time interval (late May to late June), as hives exposed to greater neonic levels in May had a LARGER increase in bee population during this time (for seams of bees only).
+
+* Finally, in the third time interval (June to August), hives located in areas where neonic concentrations were highest in May had a greater increase in pollen area. This could be potentially be related to corn crop flowering?
+
+<br><br>
