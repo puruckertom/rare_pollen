@@ -89,7 +89,7 @@ osu_covariate <- read.table(paste(osu_data,"CDRC_2017EPA_FP_DBT.csv",sep=""), he
 ##### Cleaning the data:
 
 ```{r eval=TRUE, echo=TRUE}
-osu_covariate <- osu_covariate[,1:23]
+osu_covariate <- osu_covariate[-22,1:23]
 colnames(osu_covariate)[c(4,6)] <- c("planting","per_corn")
 osu_covariate$planting<- factor(osu_covariate$planting,labels=c("no","yes"))
 neonics_cols <- which(grepl("DBT|FP",colnames(osu_covariate))& !grepl("sample_id",colnames(osu_covariate)))

@@ -14,7 +14,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Introduction
 ========================================================
-Analysis of 2015 rare data collected by Ohio State  
+Analysis of 2015 rare data collected by Ohio State   
+<br>
 
 **Overall goals**
 
@@ -25,10 +26,10 @@ With May sampling period:
 
 With the April - August hive health data:
 
-3. Examine whether greater neonic exposure in May was linked to long term consequences for hive health.
+3. Examine whether greater neonic exposure in May was linked to long term consequences for hive health.  
 
-
-Technical points: 
+<br>
+Some technical points: 
 
 1. In the original April - August hive health dataset, neonic exposure in May (and in planting period) was expressed as sum of the concentrations detected at each sampling date. It would be more appropriate to take the mean of these concentrations. This should make these values easier to interpret. **Note:** this should not change the results, as each site had the same number of measurements during each period. However, if this were not true (for example, if we remove an outlier observation), taking sums would lead to erroneous differences between sites.  
 
@@ -45,12 +46,12 @@ https://github.com/puruckertom/rare_pollen
 Computational environment
 ========================================================
 
-```{r eval=FALSE, echo=FALSE}
+```{r eval=FALSE, echo=FALSE,warning=FALSE}
 #library(installr) #windows only currently
 #updateR()
 ```
 Version and installed libraries.
-```{r eval=TRUE, echo=TRUE}
+```{r eval=TRUE, echo=FALSE}
 verbose_output = TRUE
 
 if(verbose_output){
@@ -89,8 +90,11 @@ osu_data <- paste(rare_data, "data_in/", sep="")
 
 Analytical data
 ========================================================
-##### Original file with observational data: 
-https://github.com/puruckertom/rare_pollen/blob/master/data_in/rare_data_osu_2015.csv
+##### Original files with observational data: 
+https://github.com/puruckertom/rare_pollen/blob/master/data_in/rare_data_osu_2015_clean_no_outlier.csv
+https://github.com/puruckertom/rare_pollen/blob/master/data_in/interval_site_level.csv
+https://github.com/puruckertom/rare_pollen/blob/master/data_in/raw_frame_data.csv
+
 
 ```{r eval=TRUE, echo=TRUE}
 ##################
@@ -132,8 +136,6 @@ osu_covariate$DBT_total_neonic <- rowSums(osu_covariate[,grepl("DBT",colnames(os
 osu_covariate$FP_total_neonic <- rowSums(osu_covariate[,grepl("FP",colnames(osu_covariate))& !grepl("sample_id|detected",colnames(osu_covariate))])
 
 neonics_cols <- c(neonics_cols,which(colnames(osu_covariate) %in% c("DBT_total_neonic","FP_total_neonic")))
-
-#write.csv(osu_covariate,"data_in/CDRC_2017EPA_FP_DBT_clean.csv",row.names=FALSE) #output a csv for the cleaned data
 
 #str(osu_covariate) #display summary of cleaned dataframe
 
@@ -191,14 +193,6 @@ interval_site <- merge(interval_site,site_means,by="site_code")
 keep<- colnames(interval_site)[!grepl("chg|interval|n_hives",colnames(interval_site))]
 site_wide <- reshape(interval_site,idvar=keep,timevar="interval",direction="wide",sep="_",
                      drop=c("n_hives"),new.row.names=c(1:10))
-
-## Make variables for total change (first observation to final observation)
-#hive_vars <- c("seam","bee","cap","open","pollen","nectar")
-#for(i in 1:length(hive_vars)){
-#  new_var <- rowSums(site_wide[,paste(hive_vars[i],c("1","2","3"),sep="_chg_")])
-#  site_wide[[paste(hive_vars[i],"_chg_total",sep="")]] <- new_var
-#}
-
 
 
 
@@ -264,69 +258,6 @@ site_wide$mean_total_planting <- site_wide$mean_clo_planting + site_wide$mean_th
 colnames(site_wide)[colnames(site_wide) == "mean_total_may"] <- "mean_ct_may"
 colnames(site_wide)[colnames(site_wide) == "mean_total_planting"] <- "mean_ct_planting"
 
-
-###Create hive health regression slopes (entire time interval)
-
-#frame_data$time <- frame_data$month - 4
-#frame_data$hive_no <- factor(frame_data$hive_no)
-#health_vars <- c("seams_bees","bees_cm2","capped_cm2","open_cm2","pollen_cm2","nectar_cm2")
-#sites <- levels(frame_data$site_abv)[2:11]
-#betas_site <- matrix(,nrow=length(sites),ncol=length(health_vars))
-#for(i in 1:length(health_vars)){
-#  
-#  
-#  for(j in 1:length(sites)){
-#    betas_site[j,i] <- lm(as.formula(paste(health_vars[i],"~ time")),data=subset(frame_data,site_abv == sites[j]))$coefficients[2]
-#    
-#  }
-#}
-#betas_site <- data.frame(site_abv = sites, betas_site)
-#colnames(betas_site) <- c("site_code",health_vars)
-
-#Merge hive health regression slopes back to site level wide dataset 
-#site_wide <- merge(site_wide,betas_site,by = "site_code")
-
-
-###Create hive health regression slopes (time points 1 to 3)
-# 
-# health_vars <- c("seams_bees","bees_cm2","capped_cm2","open_cm2","pollen_cm2","nectar_cm2")
-# sites <- levels(frame_data$site_abv)[2:11]
-# betas_site <- matrix(,nrow=length(sites),ncol=length(health_vars))
-# for(i in 1:length(health_vars)){
-#   
-#   
-#   for(j in 1:length(sites)){
-#     betas_site[j,i] <- lm(as.formula(paste(health_vars[i],"~ time")),data=subset(frame_data,site_abv == sites[j] & time != 4))$coefficients[2]
-#     
-#   }
-# }
-# betas_site <- data.frame(site_abv = sites, betas_site)
-# colnames(betas_site) <- c("site_code",paste(health_vars,"1st",sep="_"))
-# 
-# #Merge hive health regression slopes back to site level wide dataset 
-# site_wide <- merge(site_wide,betas_site,by = "site_code")
-# 
-# 
-# 
-# ###Create hive health regression slopes (final time period)
-# 
-# health_vars <- c("seams_bees","bees_cm2","capped_cm2","open_cm2","pollen_cm2","nectar_cm2")
-# sites <- levels(frame_data$site_abv)[2:11]
-# betas_site <- matrix(,nrow=length(sites),ncol=length(health_vars))
-# for(i in 1:length(health_vars)){
-#   
-#   
-#   for(j in 1:length(sites)){
-#     betas_site[j,i] <- lm(as.formula(paste(health_vars[i],"~ time")),data=subset(frame_data,site_abv == sites[j] & !(time %in% c(0,1))))$coefficients[2]
-#     
-#   }
-# }
-# betas_site <- data.frame(site_abv = sites, betas_site)
-# colnames(betas_site) <- c("site_code",paste(health_vars,"2nd",sep="_"))
-# 
-# #Merge hive health regression slopes back to site level wide dataset 
-# site_wide <- merge(site_wide,betas_site,by = "site_code")
-# 
 
 
 
@@ -397,7 +328,7 @@ site_wide <- do.call(data.frame,lapply(site_wide, function(x) replace(x, is.infi
 Goal 1: Greater neonic concentrations in pollen associated with greater mortality?
 ====================================
 
-### First, lets see if greater neonic concentrations were linked with higher mortality right when they were measured.
+#### First, lets see if greater neonic concentrations were linked with higher mortality right when they were measured.
 
 ```{r eval=T, echo=T}
 
@@ -510,6 +441,7 @@ Goal 2: Neonic concentrations in pollen related to percent corn coverage nearby?
 First, let's try using each time point during May. 
 
 Our approach will be to model pollen neonic concentration as a factor of:
+
 1. Percent corn nearby
 2. Whether or not it was a planting period (yes/no)
 3. Interaction between 1 and 2
@@ -525,14 +457,14 @@ for(i in 1:length(interesting_neonics)){
   cat("-------------------------------------\n\n",paste("Linear regression, ",interesting_neonics[i]," vs percent corn:",sep=""),"\n")
   print(summary(fm))
   #hist(resid(fm))
+  if(i==length(interesting_neonics)) cat("-------------------------------------\n\n")
 }
-cat("-------------------------------------\n\n")
 ```
 
-Summary: There was no effect of percent corn nearby on clothianidin, thiamethoxam, or clo + thi. 
+Finding: There was no effect of percent corn nearby on clothianidin, thiamethoxam, or clo + thi. 
 <br><br>
 
-#### What if we look at percent corn nearby versus *mean* neonic concentration over May (or planting period)
+#### What if we look at percent corn nearby versus *mean* neonic concentration over May (or planting period)?
 
 For May:
 
@@ -544,8 +476,8 @@ for(i in 1:length(interesting_neonics_site_m)){
   cat("-------------------------------------\n\n",paste("Linear regression, ",names_site_m[i]," vs percent corn:",sep=""),"\n")
   print(summary(fm))
   #hist(resid(fm))
+  if(i==length(interesting_neonics_site_m)) cat("-------------------------------------\n\n")
 }
-cat("-------------------------------------\n\n")
 ```
 
 For planting period:
@@ -558,11 +490,12 @@ for(i in 1:length(interesting_neonics_site_p)){
   cat("-------------------------------------\n\n",paste("Linear regression, ",names_site_p[i]," vs percent corn:",sep=""),"\n")
   print(summary(fm))
   #hist(resid(fm))
+  if(i==length(interesting_neonics_site_p)) cat("-------------------------------------\n\n")
+
 }
-cat("-------------------------------------\n\n")
 ```
 
-Summary: Percent corn nearby was NOT significantly related to average May or planting period neonic concentrations. (Note: The positive effect of percent corn nearby on planting period mean clo + thi was borderline significant - p=0.053)
+Finding: Percent corn nearby was NOT significantly related to average May or planting period neonic concentrations. (Note: The positive effect of percent corn nearby on planting period mean clo + thi was borderline significant - p=0.053)
 
 <br><br>
 
@@ -577,8 +510,9 @@ for(i in 1:length(interesting_neonics_site_p)){
   cat("-------------------------------------\n\n",paste("t-test, ",names_site_p[i]," vs montly average:",sep=""),"\n")
   print(fm)
   #hist(resid(fm))
+  if(i==length(interesting_neonics_site_p)) cat("-------------------------------------\n\n")
+
 }
-cat("-------------------------------------\n\n")
 
 
 ```
@@ -591,7 +525,7 @@ Summary: For clothianidin and clo + thi, mean concentrations were greater during
 Goal 2: overall findings
 ===============================
 
-* There was no significant effect of percent corn nearby on daily or mean neonic concentrations in pollen. 
+* There were no significant effects of percent corn nearby on daily or mean neonic concentrations in pollen. 
 
 * But across all sites, mean clothianidin and clo + thi concentrations were significantly elevated during the planting period compared with the monthly average. 
 
@@ -611,7 +545,7 @@ Goal 3: Greater neonic exposure in May linked to long term consequences?
 To address this question, we calculated relative changes in the six hive health variables:
 
 * area of bees
-* # of seams filled with bees
+* number of seams filled with bees
 * area of capped brood
 * area of open brood
 * area of pollen
@@ -630,10 +564,10 @@ $Rel. change = \frac{final - initial}{initial}*100$
 
 We also wanted to account for the idea that the negative effect of bees collecting neonic-contiminated pollen could be partially by the beneficial effect of increased food supply. Therefore, we included the relative change in hive pollen area as a potential covariate in our models.
 
-So, for each hive health variable and interval combination, we fit a multiple linear regression model of the form:
+So, for each hive health variable and interval combination, we fit a multiple linear regression model of the form:  
 <br>
 
-Relative change ~ (Mean clo + thi in May) + (relative change in pollen area over the same interval)
+*Relative change ~ (Mean clo + thi in May) + (relative change in pollen area over the same interval)*  
 <br>
 
 If the pollen change covariate was not significant, we dropped the term and refit the model. Note: pollen covariate not applicable when rel. change in pollen area was the main variable of interest. 
@@ -645,26 +579,29 @@ If the pollen change covariate was not significant, we dropped the term and refi
 **For interval 1 (April - May): **
 
 Greater mean clo + thi in pollen in May was associated with:
+
 * less rel. change in *bee area*
 * less rel. change in *# of seams filled with bees*
 
 **For interval 2 (May - June): **
 
 Greater mean clo + thi in pollen in May was associated with:
+
 * greater rel. change in *# of seams filled with bees*
 
 **For interval 3 (June - August): **
 
 Greater mean clo + thi in pollen in May was associated with:
+
 * greater rel. change in *pollen area*
 * less rel. change in *open brood* - BUT driven by one outlier
 
 **For total interval (April - August): **
 
 No significant effects
-<br>
+<br><br>
 
-##### Model summaries and plots of significant effects
+#### Model summaries and plots of significant effects
 
 ```{r echo=T,eval=T,fig.width=5,fig.height=4}
 
@@ -680,7 +617,6 @@ g <- ggplot(site_wide,aes(mean_ct_may,bees_relchg_1))+geom_point(na.rm=T,size=2.
          y="Rel. change in area of bees (%)")+geom_hline(yintercept=0) +
   theme(plot.title = element_text(hjust = 0.5))
 print(g + ggtitle("Interval 1"))
-cat("-------------------------------------\n\n")
 
 
 fm_seams_r1 <- lm(seams_relchg_1 ~ mean_ct_may , data=site_wide)
@@ -693,7 +629,6 @@ g <- ggplot(site_wide,aes(mean_ct_may,seams_relchg_1))+geom_point(na.rm=T,size=2
          y="Rel. change in # of seams filled with bees (%)")+geom_hline(yintercept=0) +
   theme(plot.title = element_text(hjust = 0.5))
 print(g + ggtitle("Interval 1"))
-cat("-------------------------------------\n\n")
 
 
 ## interval 2 ##
@@ -708,23 +643,9 @@ g <- ggplot(site_wide,aes(mean_ct_may,seams_relchg_2))+geom_point(na.rm=T,size=2
          y="Rel. change in # of seams filled with bees (%)")+geom_hline(yintercept=0) +
   theme(plot.title = element_text(hjust = 0.5))
 print(g + ggtitle("Interval 2"))
-cat("-------------------------------------\n\n")
 
 
 ## interval 3 ##
-
-fm_open_r3 <- lm(open_relchg_3 ~ mean_ct_may, data=site_wide) 
-summary(fm_open_r3) # significant decrease - driven by one outlier only
-
-g <- ggplot(site_wide,aes(mean_ct_may,open_relchg_3))+geom_point(na.rm=T,size=2.5)+
-    geom_smooth(method="lm",formula=y~x,na.rm=T,size=2)+theme_bw()+ 
-    theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank()) +
-    labs(x="Mean clo + thi in pollen in May (ng g-1)",
-         y="Rel. change in open brood area (%)")+geom_hline(yintercept=0) +
-  theme(plot.title = element_text(hjust = 0.5))
-print(g + ggtitle("Interval 3"))
-cat("-------------------------------------\n\n")
-
 
 fm_pollen_r3 <- lm(pollen_relchg_3 ~ mean_ct_may , data=site_wide)
 summary(fm_pollen_r3) # significant increase
@@ -736,7 +657,6 @@ g <- ggplot(site_wide,aes(mean_ct_may,pollen_relchg_3))+geom_point(na.rm=T,size=
          y="Rel. change in pollen area (%)")+geom_hline(yintercept=0) +
   theme(plot.title = element_text(hjust = 0.5))
 print(g + ggtitle("Interval 3"))
-cat("-------------------------------------\n\n")
 
 
 ```
