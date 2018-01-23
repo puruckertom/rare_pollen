@@ -501,16 +501,19 @@ for(i in 1:length(interesting_neonics_site_p)){
 #### Finally, were mean neonic concentrations greater during the planting period compared to the monthly average? 
 
 We can use a simple t test:
-```{r echo=F, eval=T}
+```{r echo=F, eval=T,fig.width=4.7,fig.height=4.2}
 
-
+names_ttest <- c("clothianidin","thiamethoxam","clo + thi")
 for(i in 1:length(interesting_neonics_site_p)){
   fm <- t.test(site_wide[[interesting_neonics_site_p[i]]],site_wide[[interesting_neonics_site_m[i]]])
   cat("-------------------------------------\n\n",paste("t-test, ",names_site_p[i]," vs montly average:",sep=""),"\n")
   print(fm)
   #hist(resid(fm))
   if(i==length(interesting_neonics_site_p)) cat("-------------------------------------\n\n")
-
+  boxplot(site_wide[[interesting_neonics_site_p[i]]],site_wide[[interesting_neonics_site_m[i]]],ylim=c(0,40),
+          ylab=paste(names_ttest[i],"(ng g-1)"), names=c("Planting","May average"),col="cadetblue4")
+  #axis(side=1,at=c(1,2),labels=c("Planting","May average"))
+  
 }
 
 
