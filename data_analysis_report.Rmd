@@ -10,6 +10,7 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+<base target="_top"/>
 <br>
 
 Introduction
@@ -90,7 +91,7 @@ osu_data <- paste(rare_data, "data_in/", sep="")
 Analytical data
 ========================================================
 ##### Original files with observational data: 
-https://github.com/puruckertom/rare_pollen/blob/master/data_in/rare_data_osu_2015_clean_no_outlier.csv
+https://github.com/puruckertom/rare_pollen/blob/master/data_in/CDRC_2017EPA_FP_DBT_clean_no_outlier.csv
 https://github.com/puruckertom/rare_pollen/blob/master/data_in/interval_site_level.csv
 https://github.com/puruckertom/rare_pollen/blob/master/data_in/raw_frame_data.csv
 
