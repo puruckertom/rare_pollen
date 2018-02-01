@@ -205,8 +205,8 @@ frame_data[,grepl("per_comb",colnames(frame_data))] <- as.numeric(gsub("%","",as
 frame_data[["per_corn"]] <- as.numeric(gsub("%","",as.matrix(frame_data[,"per_corn"])))
 
 #Make site DS hive_no consistent ** Note: need to find out what's going on with these DS hives?
-#frame_data$hive_no[frame_data$hive_no == 31.01] <- 31
-#frame_data$hive_no[frame_data$hive_no == 31.02] <- 32
+frame_data$hive_no[frame_data$hive_no == 31.01] <- 31
+frame_data$hive_no[frame_data$hive_no == 31.02] <- 32
 
 
 #convert long to wide format
@@ -597,7 +597,7 @@ Greater mean clo + thi in pollen in May was associated with:
 
 Greater mean clo + thi in pollen in May was associated with:
 
-* greater rel. change in *# of seams filled with bees*  
+* greater rel. change in # of seams filled with bees
 <br>
 
 **For interval 3 (June - August): **
@@ -656,7 +656,6 @@ g <- ggplot(site_wide,aes(mean_ct_may,seams_relchg_2))+geom_point(na.rm=T,size=2
   theme(plot.title = element_text(hjust = 0.5))
 print(g + ggtitle("Interval 2"))
 
-
 ## interval 3 ##
 
 fm_pollen_r3 <- lm(pollen_relchg_3 ~ mean_ct_may , data=site_wide)
@@ -680,8 +679,6 @@ Goal 3: Overall findings
 
 * Greater exposure to neonics in May was associated with a reduction in the relative population growth of the hive (as measured by area of bees and seams of bees) over the earliest time interval (late April to late May).
 
-* However, there may have been a recovery in the second time interval (late May to late June), as hives exposed to greater neonic levels in May had a LARGER increase in bee population during this time (for seams of bees only).
-
-* Finally, in the third time interval (June to August), hives located in areas where neonic concentrations were highest in May had a greater increase in pollen area. This could be potentially be related to corn crop flowering?
+* In the third time interval (June to August), hives located in areas where neonic concentrations were highest in May had a greater increase in pollen area. This could be potentially be related to corn crop flowering?
 
 <br><br>
