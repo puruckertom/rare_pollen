@@ -292,6 +292,9 @@ for(i in 1:length(health_vars)){
 site_wide <- merge(site_wide,aggregated_site,by="site_code")
 site_wide <- do.call(data.frame,lapply(site_wide, function(x) replace(x, is.infinite(x),NA)))
 
+#write a cleaned site-level dataset
+#write.csv(site_wide[,c(1:10,60:length(colnames(site_wide)))],
+#          paste(osu_data,"interval_site_reformatted.csv",sep=""),row.names=F)
 
 # 
 # #Look at pairwise correlations between neonic conc. and relative health changes over time
