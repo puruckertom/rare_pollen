@@ -10,6 +10,8 @@ library(ggplot2)
 library(reshape2)
 library(corrplot)
 library(nlme)
+library(gridExtra)
+library(grid)
 
 #set wd
 if(Sys.info()[4]=="DZ2626UTPURUCKE"){
@@ -221,6 +223,46 @@ site_wide <- do.call(data.frame,lapply(site_wide, function(x) replace(x, is.infi
 
 ###### END data formatting
 
+#define a theme for manuscript plots
+
+
+############################
+theme_ms <-function (base_size = 12, base_family = "") {
+  theme_bw() + theme(line = element_line(colour = "black", size = 0.5, linetype = 1, lineend = "butt"), 
+        rect = element_rect(fill = "white", colour = "black", size = 0.5, linetype = 1), 
+        text = element_text(family = base_family, face = "plain", colour = "black", size = base_size, hjust = 0.5, vjust = 0.5, angle = 0, lineheight = 0.9,margin = margin(), debug = FALSE), 
+        
+        axis.text = element_text(size = rel(0.8), colour = "black",margin=margin(0.1,0.1,0.1,0.1,unit= "cm")), 
+        strip.text = element_text(size = rel(0.8)), 
+        axis.line = element_line(colour = "black"), 
+        axis.text.x = element_text(vjust = 1), 
+        axis.text.y = element_text(hjust = 1), 
+        axis.ticks = element_line(colour = "black"), 
+        axis.title.x = element_text(), 
+        axis.title.y = element_text(angle = 90), 
+        axis.ticks.length = unit(0.15, "cm"), 
+        #axis.ticks.margin = unit(0.1, "cm"), 
+        
+        #panel.background = element_blank(), 
+        #panel.border = element_blank(), 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        panel.spacing = unit(0.25, "lines"), 
+        panel.spacing.x = NULL, 
+        panel.spacing.y = NULL, 
+        panel.ontop=FALSE,
+        legend.key=element_blank(),
+        
+        
+        strip.background = element_rect(fill = "grey80", colour = NA), 
+        strip.text.x = element_text(), 
+        strip.text.y = element_text(angle = -90), 
+        
+        plot.background = element_rect(colour = "white"), 
+        plot.title = element_text(size = 20,face="bold",vjust=2), 
+        plot.margin = unit(c(1, 1, 0.8, 0.5), "lines"), complete = TRUE)
+}
+
 
 
 #Figure S1 - 3 panel figure showing change in seams of bees over the 3 intervals
@@ -229,13 +271,15 @@ site_wide <- do.call(data.frame,lapply(site_wide, function(x) replace(x, is.infi
 #fm_seams_r1 <- lm(seams_relchg_1 ~ mean_ct_may , data=site_wide)
 #summary(fm_seams_r1) #significant reduction
 
+theme_set(theme_ms(16))
+
 g1 <- ggplot(site_wide,aes(mean_ct_may,seams_relchg_1))+geom_point(na.rm=T,size=2.5)+
-  geom_smooth(method="lm",formula=y~x,na.rm=T,size=2)+theme_bw()+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank()) +
-  labs(x="Mean clo + thi in pollen in May (ng g-1)",
-       y="Rel. change in # of seams filled with bees (%)")+geom_hline(yintercept=0) +
-  theme(plot.title = element_text(hjust = 0.5))
-print(g + ggtitle("Interval 1"))
+  stat_smooth(method="lm",formula=y~x,na.rm=T,size=1.5, se=F, fullrange=T) + ylim(c(-150,150)) + xlim(c(-5, 20)) +
+  labs(x="", y="Change in seams of bees (%)")+ geom_hline(yintercept=0)+
+  coord_cartesian(ylim=c(-100, 100),xlim=c(5, 15),expand=T) + 
+  annotate("text",x=7,y=100,label = "Late April - late May",size=4.5)+ 
+  annotate("text",x=13.5,y=-70,label = "r^2 == 0.44",parse=T,size=4.5)
+#g1
 
 
 # interval 2
@@ -243,9 +287,26 @@ print(g + ggtitle("Interval 1"))
 #summary(fm_seams_r2) #significant increase 
 
 g2 <- ggplot(site_wide,aes(mean_ct_may,seams_relchg_2))+geom_point(na.rm=T,size=2.5)+
-  geom_smooth(method="lm",formula=y~x,na.rm=T,size=2)+theme_bw()+ 
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank()) +
-  labs(x="Mean clo + thi in pollen in May (ng g-1)",
-       y="Rel. change in # of seams filled with bees (%)")+geom_hline(yintercept=0) +
-  theme(plot.title = element_text(hjust = 0.5))
-print(g + ggtitle("Interval 2"))
+  stat_smooth(method="lm",formula=y~x,na.rm=T,se=F, size=1.5, fullrange=T)+ ylim(c(-150,150)) + xlim(c(2.5, 20)) +
+  labs(x="", y="Change in seams of bees (%)")+geom_hline(yintercept=0)+
+  coord_cartesian(ylim=c(-100, 100),xlim=c(5, 15),expand=T)+ 
+  annotate("text",x=7,y=100,label = "Late May - late June",size=4.5) + 
+  annotate("text",x=13.5,y=-70,label = "r^2 == 0.43",parse=T,size=4.5)
+
+g3 <- ggplot(site_wide,aes(mean_ct_may,seams_relchg_3))+geom_point(na.rm=T,size=2.5)+ 
+  ylim(c(-150,150)) + xlim(c(2.5, 20)) +
+  #geom_smooth(method="lm",formula=y~x,na.rm=T,size=2)+
+  labs(x=expression(paste("Neonicotinoid content of pollen (ng g"^"-1",")",sep="")),
+       y="Change in seams of bees (%)")+geom_hline(yintercept=0) +
+  coord_cartesian(ylim=c(-100, 100),xlim=c(5, 15),expand=T) + 
+  annotate("text",x=7.3,y=100,label = "Late June - mid August",size=4.5)
+
+
+gA <- ggplotGrob(g1)
+gB <- ggplotGrob(g2)
+gC <- ggplotGrob(g3)
+grid::grid.newpage()
+#windows(w=24,h=14)
+pdf(file="figures/seams_bees_change.pdf",width=5,height=13)
+grid.draw(gtable_rbind(gA, gB,gC, size="max"))
+dev.off()
