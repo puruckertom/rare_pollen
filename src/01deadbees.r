@@ -1,11 +1,4 @@
 
-
-pesticide <- read.table("data_in/pesticide201314.csv",sep=",",header=T,fill=T)
-pesticide2015 <- read.table("data_in/pesticide2015.csv",sep=",",header=T,fill=T)
-
-
-deadbees <- read.table("data_in/deadbees.csv",sep=",",header=T,fill=T)
-
 deadbees <- deadbees[,1:14]
 deadbees$julian <- deadbees$julian+31+28+31+25
 
